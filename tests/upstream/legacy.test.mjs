@@ -3,31 +3,18 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gunzipSync } from "node:zlib";
 import test from "node:test";
+import { BUILDS, htmlFiles } from "./legacy-builds.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const BASELINE = new URL("./baseline.json", import.meta.url);
-const UPSTREAM = "dbf697a527bbf7d358668e1557cb1e35ff725d46";
-const EXAMPLES = ["dial-indicator", "desk-computer", "arcade-cabinet", "ripple-tank", "turning-dial", "raptor-engine"];
-const BUILDS = EXAMPLES.flatMap((name) => [
-  [`examples/${name}/build.mjs`],
-  [`examples/${name}/build.mjs`, "--light"],
-]);
-BUILDS.push(["examples/turning-dial/build.mjs", "--light", "--verify"], ["examples/turning-dial/stress.mjs", "--light"]);
-
-function htmlFiles(root, directory) {
-  if (!directory) return EXAMPLES.flatMap((name) => htmlFiles(root, join(root, "examples", name))).sort();
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? htmlFiles(root, path) : entry.name.endsWith(".html") ? [relative(root, path)] : [];
-  }).sort();
-}
+const UPSTREAM = "240a9bf7c50cc6226148762a1017466fcbc08523";
 
 test("legacy-builds-are-byte-identical", { timeout: 900_000 }, async (t) => {
-  assert.ok(existsSync(BASELINE), "Missing pinned upstream baseline; generate it only from untouched dbf697a527bbf7d358668e1557cb1e35ff725d46");
+  assert.ok(existsSync(BASELINE), `Missing pinned upstream baseline; generate it with tests/upstream/generate-baseline.mjs only from untouched ${UPSTREAM}`);
   const baseline = JSON.parse(readFileSync(BASELINE, "utf8"));
   assert.equal(baseline.source.commit, UPSTREAM);
   assert.equal(baseline.encoding, "gzip-base64");
