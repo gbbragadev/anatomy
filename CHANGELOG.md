@@ -6,6 +6,8 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 
 ### Added
 
+- Strict opt-in machine contracts, SI normalization with original metadata, conservative evidence-level and unit-bearing uncertainty gates, declared check scopes, complete dependency invalidation and a visible-text claim audit. F3 quantitative validation remains unavailable in this contract. The generic belt-bucket recipe is recognized as a contract only; assembly and model implementations remain planned.
+
 - An opt-in faithful-mode workflow, a normalized machine-fidelity specification, an isolated Node/Ajv package and pinned byte/API regression coverage for all framework-free legacy builds. Domain recipes and faithful runtime implementations remain planned work.
 - `examples/arcade-cabinet/`, an upright arcade cabinet with its side panel off. A quarter rolls down the coin chute past the coin-switch wire into the cash box, the switch's pulse runs along its cable to the board, and the CRT warms up, self-tests and runs an attract mode drawn in the plane of the tilted monitor; the stick closes a microswitch under the panel. It draws in the light and dark themes and passes `--audit`.
 - `examples/spot-plate/`, a second React figure from the same site as `test-rig`: six pairs of glass drops that run together into one piece of glass as a fan of feeler blades sets `merge`. It draws in the light and dark themes.
@@ -13,6 +15,7 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 
 ### Fixed
 
+- Empty parameter dependencies no longer suppress conservative evidence invalidation. Raw machine comparisons cannot approve claims after canonical conversion or residual/uncertainty arithmetic overflows.
 - `examples/test-rig/` drew its glass button dark in the light theme. `stretch.css` now has light values for its own colours.
 
 ### Changed

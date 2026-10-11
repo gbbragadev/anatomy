@@ -1,0 +1,131 @@
+[
+  {
+    "name": "duplicate-id",
+    "path": "/parts/1/id",
+    "value": "frame",
+    "code": "DUPLICATE_ID",
+    "diagnosticPath": "/parts/1/id"
+  },
+  {
+    "name": "missing-parent",
+    "path": "/parts/1/parentId",
+    "value": "absent",
+    "code": "MISSING_PARENT",
+    "diagnosticPath": "/parts/1/parentId"
+  },
+  {
+    "name": "missing-material",
+    "path": "/parts/1/materialId",
+    "value": "absent",
+    "code": "MISSING_MATERIAL",
+    "diagnosticPath": "/parts/1/materialId"
+  },
+  {
+    "name": "missing-source",
+    "path": "/parts/1/sourceIds/0",
+    "value": "absent",
+    "code": "MISSING_SOURCE",
+    "diagnosticPath": "/parts/1/sourceIds/0"
+  },
+  {
+    "name": "unknown-unit",
+    "path": "/parameters/beltBucket/headRadius/unit",
+    "value": "inch-ish",
+    "code": "UNKNOWN_UNIT",
+    "diagnosticPath": "/parameters/beltBucket/headRadius/unit"
+  },
+  {
+    "name": "unknown-domain",
+    "path": "/model/domain",
+    "value": "invented",
+    "code": "UNKNOWN_DOMAIN",
+    "diagnosticPath": "/model/domain"
+  },
+  {
+    "name": "unknown-recipe",
+    "path": "/model/recipe",
+    "value": "gear-pair/ideal-v1",
+    "code": "UNKNOWN_RECIPE",
+    "diagnosticPath": "/model/recipe"
+  },
+  {
+    "name": "unknown-version",
+    "path": "/schemaVersion",
+    "value": "2.0.0",
+    "code": "UNKNOWN_SCHEMA_VERSION",
+    "diagnosticPath": "/schemaVersion"
+  },
+  {
+    "name": "zero-axis",
+    "path": "/joints/0/axis",
+    "value": [
+      0,
+      0,
+      0
+    ],
+    "code": "ZERO_AXIS",
+    "diagnosticPath": "/joints/0/axis"
+  },
+  {
+    "name": "invalid-quaternion",
+    "path": "/parts/1/localRest/rotation_xyzw",
+    "value": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "code": "INVALID_QUATERNION",
+    "diagnosticPath": "/parts/1/localRest/rotation_xyzw"
+  },
+  {
+    "name": "negative-mass",
+    "path": "/parts/1/mass/value",
+    "value": -1,
+    "code": "NEGATIVE_MASS",
+    "diagnosticPath": "/parts/1/mass/value"
+  },
+  {
+    "name": "negative-inventory",
+    "path": "/initialState/inventory_kg/feed",
+    "value": -1,
+    "code": "NEGATIVE_MASS",
+    "diagnosticPath": "/initialState/inventory_kg/feed"
+  },
+  {
+    "name": "negative-scale",
+    "path": "/parts/1/scale",
+    "value": [
+      -1,
+      -1,
+      -1
+    ],
+    "code": "INVALID_SCALE",
+    "diagnosticPath": "/parts/1/scale"
+  },
+  {
+    "name": "nonuniform-scale",
+    "path": "/parts/1/scale",
+    "value": [
+      1,
+      2,
+      1
+    ],
+    "code": "INVALID_SCALE",
+    "diagnosticPath": "/parts/1/scale"
+  },
+  {
+    "name": "raw-markup",
+    "path": "/visibleText/0/text",
+    "value": "<script>alert(1)</script>",
+    "code": "UNSAFE_TEXT",
+    "diagnosticPath": "/visibleText/0/text"
+  },
+  {
+    "name": "parent-cycle",
+    "path": "/parts/0/parentId",
+    "value": "head-pulley",
+    "code": "PARENT_CYCLE",
+    "diagnosticPath": "/parts/0/parentId"
+  }
+]

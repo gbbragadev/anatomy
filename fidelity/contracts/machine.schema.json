@@ -1,0 +1,1784 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anatomy.invalid/fidelity/machine-0.1.0.schema.json",
+  "title": "Anatomy machine manifest 0.1.0",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "0.1.0"
+    },
+    "machineId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "frame": {
+      "$ref": "#/$defs/frame"
+    },
+    "metersPerLegacyUnit": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      },
+      "minItems": 1
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "visibleText": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/visibleText"
+      }
+    },
+    "definitions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/definition"
+      }
+    },
+    "instances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instance"
+      }
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/part"
+      },
+      "minItems": 1
+    },
+    "frames": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/localFrame"
+      }
+    },
+    "joints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/joint"
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/constraint"
+      }
+    },
+    "ports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/port"
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/connection"
+      }
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/material"
+      },
+      "minItems": 1
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/asset"
+      }
+    },
+    "criteria": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/criterion"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/command"
+      }
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "const": "belt-bucket"
+        },
+        "recipe": {
+          "const": "belt-bucket/kinematic-mass-v1"
+        },
+        "version": {
+          "const": "0.1.0"
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "domain",
+        "recipe",
+        "version",
+        "assumptions"
+      ],
+      "additionalProperties": false
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "beltBucket": {
+          "$ref": "#/$defs/beltBucket"
+        }
+      },
+      "required": [
+        "beltBucket"
+      ],
+      "additionalProperties": false
+    },
+    "initialState": {
+      "$ref": "#/$defs/initialState"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "machineId",
+    "frame",
+    "metersPerLegacyUnit",
+    "sources",
+    "claims",
+    "visibleText",
+    "definitions",
+    "instances",
+    "parts",
+    "frames",
+    "joints",
+    "constraints",
+    "ports",
+    "connections",
+    "materials",
+    "assets",
+    "criteria",
+    "dependencies",
+    "commands",
+    "model",
+    "parameters",
+    "initialState"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+      }
+    },
+    "pose": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "rotation_xyzw": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "position",
+        "rotation_xyzw"
+      ],
+      "additionalProperties": false
+    },
+    "frame": {
+      "type": "object",
+      "properties": {
+        "handedness": {
+          "const": "right"
+        },
+        "up": {
+          "enum": [
+            "Z",
+            "Y"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "handedness",
+        "up",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "quantity": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manufacturingTolerance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "proposedTolerance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "numericAcceptance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "sourceIds",
+        "uncertainty",
+        "manufacturingTolerance",
+        "proposedTolerance",
+        "numericAcceptance"
+      ],
+      "additionalProperties": false
+    },
+    "sourceRef": {
+      "type": "object",
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sourceId",
+        "locator",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "kind": {
+          "enum": [
+            "assumption",
+            "measurement",
+            "drawing",
+            "manual",
+            "cad",
+            "photograph",
+            "video"
+          ]
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "locator",
+        "revision",
+        "hash",
+        "confidence",
+        "uncertainty"
+      ],
+      "additionalProperties": false
+    },
+    "review": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "reviewerId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "role": {
+              "const": "human"
+            },
+            "locator": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "reviewerId",
+            "role",
+            "locator"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "claim": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "subjectIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "aspect": {
+          "enum": [
+            "construction",
+            "kinematic",
+            "process",
+            "appearance"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "illustrative",
+            "dimensional",
+            "kinematic",
+            "capacity",
+            "safety",
+            "wear",
+            "operational",
+            "appearance"
+          ]
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        },
+        "extractionMethod": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manufacturingTolerance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "proposedTolerance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "numericAcceptance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "requestedLevel": {
+          "enum": [
+            "F0",
+            "F1",
+            "F2",
+            "F3"
+          ]
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "verified",
+            "unresolved",
+            "contradicted"
+          ]
+        },
+        "checkIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "dependsOnClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "review": {
+          "$ref": "#/$defs/review"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "subjectIds",
+        "aspect",
+        "kind",
+        "statement",
+        "sourceRefs",
+        "extractionMethod",
+        "uncertainty",
+        "manufacturingTolerance",
+        "proposedTolerance",
+        "numericAcceptance",
+        "conditions",
+        "requestedLevel",
+        "status",
+        "checkIds",
+        "dependsOnClaimIds",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "visibleText": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "caption",
+                "tooltip",
+                "static-alternative",
+                "report",
+                "readout",
+                "label"
+              ]
+            },
+            "locator": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "locator"
+          ],
+          "additionalProperties": false
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          },
+          "minItems": 1
+        },
+        "sourceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          },
+          "minItems": 1
+        },
+        "mode": {
+          "enum": [
+            "assertion",
+            "illustrative"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "location",
+        "text",
+        "claimIds",
+        "sourceRefs",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "definition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "materialId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "geometry",
+        "materialId",
+        "sourceIds"
+      ],
+      "additionalProperties": false
+    },
+    "instance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "definitionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "partId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        }
+      },
+      "required": [
+        "id",
+        "definitionId",
+        "partId"
+      ],
+      "additionalProperties": false
+    },
+    "part": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "definitionId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "instanceId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "localRest": {
+          "$ref": "#/$defs/pose"
+        },
+        "scale": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "geometry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/geometry"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "materialId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "mass": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/quantity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "auditGeometry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/geometry"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contactGeometry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/geometry"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approximationError": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/quantity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "definitionId",
+        "instanceId",
+        "parentId",
+        "localRest",
+        "scale",
+        "geometry",
+        "materialId",
+        "sourceIds",
+        "mass",
+        "auditGeometry",
+        "contactGeometry",
+        "approximationError"
+      ],
+      "additionalProperties": false
+    },
+    "localFrame": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "partId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "pose": {
+          "$ref": "#/$defs/pose"
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "partId",
+        "pose",
+        "sourceIds"
+      ],
+      "additionalProperties": false
+    },
+    "joint": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "kind": {
+          "enum": [
+            "fixed",
+            "revolute",
+            "prismatic"
+          ]
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "child": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "parentFrame": {
+          "$ref": "#/$defs/pose"
+        },
+        "childFrame": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "axisIn": {
+          "const": "joint"
+        },
+        "axis": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limits": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "min": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "min",
+                "max"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "parent",
+        "child",
+        "parentFrame",
+        "childFrame",
+        "axisIn",
+        "axis",
+        "limits",
+        "sourceIds"
+      ],
+      "additionalProperties": false
+    },
+    "constraint": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+            },
+            "kind": {
+              "const": "ratio"
+            },
+            "jointIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "ratio": {
+              "type": "number"
+            },
+            "offset": {
+              "type": "number"
+            },
+            "sourceIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "jointIds",
+            "ratio",
+            "offset",
+            "sourceIds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+            },
+            "kind": {
+              "const": "closure"
+            },
+            "partIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+              },
+              "minItems": 2
+            },
+            "jointIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+              },
+              "minItems": 1
+            },
+            "tolerance": {
+              "type": "number",
+              "minimum": 0
+            },
+            "sourceIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "partIds",
+            "jointIds",
+            "tolerance",
+            "sourceIds"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "partId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "frameId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "kind": {
+          "enum": [
+            "shaft",
+            "mount",
+            "flow"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "input",
+            "output",
+            "bidirectional"
+          ]
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "partId",
+        "frameId",
+        "kind",
+        "direction",
+        "sourceIds"
+      ],
+      "additionalProperties": false
+    },
+    "connection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "fromPortId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "toPortId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "kind": {
+          "enum": [
+            "mechanical",
+            "material"
+          ]
+        },
+        "intendedContact": {
+          "type": "boolean"
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "fromPortId",
+        "toPortId",
+        "kind",
+        "intendedContact",
+        "sourceIds"
+      ],
+      "additionalProperties": false
+    },
+    "material": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "preset": {
+          "enum": [
+            "paint",
+            "steel",
+            "rubber",
+            "neutral"
+          ]
+        },
+        "surfaceEvidenceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "physicalProperties": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "density": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/quantity"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+                  }
+                }
+              },
+              "required": [
+                "density",
+                "sourceIds"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "preset",
+        "surfaceEvidenceIds",
+        "physicalProperties"
+      ],
+      "additionalProperties": false
+    },
+    "asset": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "format": {
+          "enum": [
+            "glb",
+            "gltf"
+          ]
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "sourceFrame": {
+          "$ref": "#/$defs/frame"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "redistribution": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "uri",
+        "hash",
+        "format",
+        "sourceIds",
+        "sourceFrame",
+        "license",
+        "author",
+        "attribution",
+        "redistribution"
+      ],
+      "additionalProperties": false
+    },
+    "criterion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "aspect": {
+          "enum": [
+            "construction",
+            "kinematic",
+            "process",
+            "appearance"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "geometry",
+            "kinematic",
+            "mass",
+            "appearance",
+            "interaction",
+            "evidence"
+          ]
+        },
+        "partIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "claimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tolerance": {
+          "type": "object",
+          "properties": {
+            "manufacturing": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "project": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "numeric": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "manufacturing",
+            "project",
+            "numeric"
+          ],
+          "additionalProperties": false
+        },
+        "critical": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "aspect",
+        "kind",
+        "partIds",
+        "claimIds",
+        "sourceIds",
+        "expected",
+        "unit",
+        "tolerance",
+        "critical"
+      ],
+      "additionalProperties": false
+    },
+    "dependency": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "claimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "partIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "checkIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "sourceIds",
+        "claimIds",
+        "partIds",
+        "checkIds"
+      ],
+      "additionalProperties": false
+    },
+    "command": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+        },
+        "type": {
+          "enum": [
+            "start",
+            "stop",
+            "set-speed",
+            "set-feed"
+          ]
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "tick"
+      ],
+      "additionalProperties": false
+    },
+    "initialState": {
+      "type": "object",
+      "properties": {
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "time_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "beltTravel_m": {
+          "type": "number"
+        },
+        "speed_mps": {
+          "type": "number"
+        },
+        "drivePhase_rad": {
+          "type": "number"
+        },
+        "inventory_kg": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        },
+        "appliedCommandIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "required": [
+        "tick",
+        "time_s",
+        "beltTravel_m",
+        "speed_mps",
+        "drivePhase_rad",
+        "inventory_kg",
+        "appliedCommandIds"
+      ],
+      "additionalProperties": false
+    },
+    "geometry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "box"
+            },
+            "dimensions": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "dimensions",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "cylinder"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "length": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "radius",
+            "length",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "prism"
+            },
+            "vertices": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "minItems": 3
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "vertices",
+            "height",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "compound"
+            },
+            "components": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+                  },
+                  "pose": {
+                    "$ref": "#/$defs/pose"
+                  },
+                  "geometry": {
+                    "$ref": "#/$defs/geometry"
+                  }
+                },
+                "required": [
+                  "id",
+                  "pose",
+                  "geometry"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "kind",
+            "components"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "asset"
+            },
+            "assetId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+            }
+          },
+          "required": [
+            "kind",
+            "assetId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "beltBucket": {
+      "type": "object",
+      "properties": {
+        "headRadius": {
+          "$ref": "#/$defs/quantity"
+        },
+        "beltNeutralRadius": {
+          "$ref": "#/$defs/quantity"
+        },
+        "attachmentOffset": {
+          "$ref": "#/$defs/quantity"
+        },
+        "bucketPitch": {
+          "$ref": "#/$defs/quantity"
+        },
+        "beltLength": {
+          "$ref": "#/$defs/quantity"
+        },
+        "centerDistance": {
+          "$ref": "#/$defs/quantity"
+        },
+        "bucketCount": {
+          "$ref": "#/$defs/quantity"
+        },
+        "speed": {
+          "$ref": "#/$defs/quantity"
+        },
+        "acceleration": {
+          "$ref": "#/$defs/quantity"
+        },
+        "deceleration": {
+          "$ref": "#/$defs/quantity"
+        },
+        "bucketCapacity": {
+          "$ref": "#/$defs/quantity"
+        },
+        "feedRate": {
+          "$ref": "#/$defs/quantity"
+        },
+        "allowReverse": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "headRadius",
+        "beltNeutralRadius",
+        "attachmentOffset",
+        "bucketPitch",
+        "beltLength",
+        "centerDistance",
+        "bucketCount",
+        "speed",
+        "acceleration",
+        "deceleration",
+        "bucketCapacity",
+        "feedRate",
+        "allowReverse"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
