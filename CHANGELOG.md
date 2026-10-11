@@ -6,7 +6,9 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 
 ### Added
 
-- Strict opt-in machine contracts, SI normalization with original metadata, conservative evidence-level and unit-bearing uncertainty gates, declared check scopes, complete dependency invalidation and a visible-text claim audit. F3 quantitative validation remains unavailable in this contract. The generic belt-bucket recipe is recognized as a contract only; assembly and model implementations remain planned.
+- Opt-in canonical assembly compilation with fixed/revolute/prismatic joints, limited analytic ratio couplings, stable physical fragment identities, separate audit/contact proxies, interface residuals and explicit unsupported asset/closure capabilities. Models and faithful renderers remain planned.
+
+- Strict opt-in machine contracts, SI normalization with original metadata, conservative evidence-level and unit-bearing uncertainty gates, declared check scopes, complete dependency invalidation and a visible-text claim audit. F3 quantitative validation remains unavailable in this contract. The generic belt-bucket recipe is recognized as a contract only; model implementations remain planned.
 
 - An opt-in faithful-mode workflow, a normalized machine-fidelity specification, an isolated Node/Ajv package and pinned byte/API regression coverage for all framework-free legacy builds. Domain recipes and faithful runtime implementations remain planned work.
 - `examples/arcade-cabinet/`, an upright arcade cabinet with its side panel off. A quarter rolls down the coin chute past the coin-switch wire into the cash box, the switch's pulse runs along its cable to the board, and the CRT warms up, self-tests and runs an attract mode drawn in the plane of the tilted monitor; the stick closes a microswitch under the panel. It draws in the light and dark themes and passes `--audit`.
@@ -14,6 +16,8 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - A first workflow step, **Size it before you start**: every request is sized as a Figure (about 30–90 minutes), a Hero (2–4 hours) or an Epic (6 hours or more), and the estimate is told to the user first. An Epic is not started until the user chooses it over a proposed Hero version. Every size has a working page within the first hour, and Claude reports when a step runs past twice its share of the estimate.
 
 ### Fixed
+
+- Canonical pose output now normalizes accepted source quaternion rounding while preserving original poses. Assembly topology uses robust orientation signs and a documented 1,024-vertex work limit, rejects collapsed positive bounds, and preserves definition evidence in failure diagnostics.
 
 - Empty parameter dependencies no longer suppress conservative evidence invalidation. Raw machine comparisons cannot approve claims after canonical conversion or residual/uncertainty arithmetic overflows.
 - `examples/test-rig/` drew its glass button dark in the light theme. `stretch.css` now has light values for its own colours.

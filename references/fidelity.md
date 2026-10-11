@@ -4,7 +4,7 @@ Use this workflow only when faithful mode is requested. The creative workflow re
 
 ## What is available now
 
-The foundation provides this route, the [architecture specification](../docs/specs/machine-fidelity.md), an isolated Node/Ajv dependency package and the pinned legacy byte/API test. No domain recipe is implemented yet. The specification describes future contracts, validators, assembly compilation, models, renderers and checks; those names are not existing toolkit APIs. Do not issue a faithful build command or claim a supported recipe until its implementation and tests exist.
+The foundation provides this route, the [architecture specification](../docs/specs/machine-fidelity.md), an isolated Node/Ajv dependency package and the pinned legacy byte/API test. No domain recipe is implemented yet. Strict SI/evidence contracts and canonical assembly/analytic-joint APIs are available through `fidelity/index.mjs`; see the [contract](../fidelity/contracts/README.md) and [assembly](../fidelity/assembly/README.md) interfaces and their explicit unsupported capabilities. Models, renderers and domain checks in the specification remain future work. Do not issue a faithful build command or claim a supported recipe until its implementation and tests exist.
 
 The first planned fixture is a generic belt-and-bucket elevator. No manufacturer, model, manual, CAD or measured real-machine evidence is available. Its source E0 means assumption, not measurement. E0 cannot support F1 dimensions. Do not claim dimensional parity, capacity, safety, wear or operational predictions from the fixture.
 

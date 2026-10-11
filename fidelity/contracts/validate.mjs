@@ -73,8 +73,10 @@ export function validateMachine(raw) {
   spec.frame.unit = "m";
   const pose = (value, path) => {
     const norm = Math.hypot(...value.rotation_xyzw);
-    if (Math.abs(norm - 1) > 1e-9) add("INVALID_QUATERNION", `${path}/rotation_xyzw`, "Quaternion must be normalized in xyzw order.");
-    return { ...value, position: value.position.map((component) => component * scale), original: { ...structuredClone(value), unit: raw.frame.unit } };
+    const accepted = Number.isFinite(norm) && norm > 0 && Math.abs(norm - 1) <= 1e-9;
+    if (!accepted) add("INVALID_QUATERNION", `${path}/rotation_xyzw`, "Source quaternion norm error must be at most 1e-9 before canonical normalization.");
+    const rotation_xyzw = accepted ? value.rotation_xyzw.map((component) => component / norm) : [...value.rotation_xyzw];
+    return { ...value, position: value.position.map((component) => component * scale), rotation_xyzw, original: { ...structuredClone(value), unit: raw.frame.unit } };
   };
   const geometry = (value, path) => {
     if (!value) return value;

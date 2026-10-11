@@ -60,7 +60,7 @@ That's it. No API keys and nothing to `npm install`: the kit uses only Node's bu
 
 Creative mode remains the default. Ask for **faithful mode** when construction and behaviour must follow identified evidence. It uses [`references/fidelity.md`](references/fidelity.md) instead of the creative invention, ornament density and minimum-part rules. Unknowns stay explicit: assumption source E0 cannot support F1 dimensions, real-machine capacity, safety, wear or operational predictions.
 
-This first foundation adds routing, the [normalized architecture specification](docs/specs/machine-fidelity.md), an isolated dependency boundary and a pinned upstream regression test. No domain recipe, machine validator, faithful builder or mesh backend is implemented yet. The planned generic bucket elevator is an illustrative fixture, not a reconstruction of an identified machine.
+The opt-in foundation adds routing, the [normalized architecture specification](docs/specs/machine-fidelity.md), an isolated dependency boundary, strict SI/evidence contracts, [canonical assembly and analytic joints](fidelity/assembly/README.md), and a pinned upstream regression test. No executable domain recipe, faithful renderer or mesh backend is implemented yet. The planned generic bucket elevator is an illustrative fixture, not a reconstruction of an identified machine.
 
 Legacy builds still need no `machine.json`, GPU, CAD importer or faithful dependency installation. Protect their output and public kit exports with Node alone:
 

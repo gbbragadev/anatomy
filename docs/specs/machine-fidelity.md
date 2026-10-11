@@ -4,7 +4,7 @@ Especificação arquitetural normalizada, versão 0.2 • 11 outubro 2026
 
 ## Escopo e estado de implementação
 
-Este documento registra a arquitetura aprovada e requisitos futuros do toolkit. A fundação implementa o roteamento opt-in, a proteção byte/API do legado, a fronteira isolada de dependências e os contratos estritos de máquina, unidades SI e evidências. Receitas executáveis, modelos, adaptadores fiéis e harnesses de domínio ainda não estão implementados. O reconhecimento do nome de uma receita no contrato não implementa essa receita. Nomes de interfaces e arquivos futuros abaixo são requisitos, não APIs disponíveis ou resultados executados.
+Este documento registra a arquitetura aprovada e requisitos futuros do toolkit. A fundação implementa o roteamento opt-in, a proteção byte/API do legado, a fronteira isolada de dependências e os contratos estritos de máquina, unidades SI e evidências, além da compilação canônica de montagem, geometria analítica e juntas fixas, revolutas e prismáticas com acoplamentos de razão limitados. Solução genérica de fechamento continua indisponível e é diagnosticada explicitamente. Receitas executáveis, modelos, adaptadores fiéis e harnesses de domínio ainda não estão implementados. O reconhecimento do nome de uma receita no contrato não implementa essa receita. Nomes de interfaces e arquivos futuros abaixo são requisitos, não APIs disponíveis ou resultados executados.
 
 O benchmark público é um elevador genérico de canecas por correia, com evidência E0 de hipótese. Não há fabricante, modelo, manual, CAD nem medidas de uma máquina real identificada. E0 não sustenta dimensões F1, capacidade real, segurança, desgaste ou previsão operacional.
 
