@@ -16,6 +16,7 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - `examples/arcade-cabinet/`, an upright arcade cabinet with its side panel off. A quarter rolls down the coin chute past the coin-switch wire into the cash box, the switch's pulse runs along its cable to the board, and the CRT warms up, self-tests and runs an attract mode drawn in the plane of the tilted monitor; the stick closes a microswitch under the panel. It draws in the light and dark themes and passes `--audit`.
 - `examples/spot-plate/`, a second React figure from the same site as `test-rig`: six pairs of glass drops that run together into one piece of glass as a fan of feeler blades sets `merge`. It draws in the light and dark themes.
 - A first workflow step, **Size it before you start**: every request is sized as a Figure (about 30–90 minutes), a Hero (2–4 hours) or an Epic (6 hours or more), and the estimate is told to the user first. An Epic is not started until the user chooses it over a proposed Hero version. Every size has a working page within the first hour, and Claude reports when a step runs past twice its share of the estimate.
+- `tests/upstream/generate-baseline.mjs` regenerates the legacy byte and export baseline from `git archive` of a named 40-hex upstream commit, never from the working tree, and has no default output path. `tests/upstream/legacy-builds.mjs` holds the build list the generator and the legacy test share.
 
 ### Fixed
 
@@ -48,11 +49,13 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - Canonical pose output now normalizes accepted source quaternion rounding while preserving original poses. Assembly topology uses robust orientation signs and a documented 1,024-vertex work limit, rejects collapsed positive bounds, and preserves definition evidence in failure diagnostics.
 - Empty parameter dependencies no longer suppress conservative evidence invalidation. Raw machine comparisons cannot approve claims after canonical conversion or residual/uncertainty arithmetic overflows.
 - `examples/test-rig/` drew its glass button dark in the light theme. `stretch.css` now has light values for its own colours.
+- The legacy regression test compared HTML paths with the platform separator and failed on Windows before it compared any bytes. Paths now use `/` on every platform.
 
 ### Changed
 
 - The workflow steps are renumbered 1–10.
 - The 4× detail sweep scales with the size: the subject and mechanism for a Figure, the whole drawing for a Hero or an Epic. The density rule itself still holds for every figure.
+- The legacy regression baseline is pinned to upstream `240a9bf` instead of `dbf697a`, so its byte-identity guarantee covers the upstream regression fixes this fork now contains.
 
 ## 2026-10-08
 
