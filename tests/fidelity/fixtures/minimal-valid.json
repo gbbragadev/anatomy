@@ -1,0 +1,465 @@
+{
+  "schemaVersion": "0.1.0",
+  "machineId": "bucket-elevator-demo",
+  "frame": {
+    "handedness": "right",
+    "up": "Z",
+    "unit": "m"
+  },
+  "metersPerLegacyUnit": 0.001,
+  "sources": [
+    {
+      "id": "E0",
+      "kind": "assumption",
+      "locator": "worked-example",
+      "revision": "synthetic-v1",
+      "hash": null,
+      "confidence": "unverified",
+      "uncertainty": null
+    }
+  ],
+  "claims": [
+    {
+      "id": "dimension-head",
+      "subjectIds": [
+        "head-pulley"
+      ],
+      "aspect": "construction",
+      "kind": "dimensional",
+      "statement": "Illustrative head radius is 0.20 m.",
+      "sourceRefs": [
+        {
+          "sourceId": "E0",
+          "locator": "worked-example/headRadius",
+          "revision": "synthetic-v1"
+        }
+      ],
+      "extractionMethod": "assumed",
+      "uncertainty": null,
+      "manufacturingTolerance": null,
+      "proposedTolerance": 0.002,
+      "numericAcceptance": 1e-12,
+      "conditions": [
+        "generic illustrative fixture"
+      ],
+      "requestedLevel": "F1",
+      "status": "proposed",
+      "checkIds": [
+        "head-radius-check"
+      ],
+      "dependsOnClaimIds": [],
+      "unit": "m"
+    }
+  ],
+  "visibleText": [
+    {
+      "id": "head-caption",
+      "location": {
+        "kind": "caption",
+        "locator": "head-radius-caption"
+      },
+      "text": "Illustrative head radius is 0.20 m.",
+      "claimIds": [
+        "dimension-head"
+      ],
+      "sourceRefs": [
+        {
+          "sourceId": "E0",
+          "locator": "worked-example/headRadius",
+          "revision": "synthetic-v1"
+        }
+      ],
+      "mode": "illustrative"
+    }
+  ],
+  "definitions": [
+    {
+      "id": "head-definition",
+      "geometry": {
+        "kind": "cylinder",
+        "radius": 200,
+        "length": 100,
+        "unit": "mm"
+      },
+      "materialId": "painted-steel",
+      "sourceIds": [
+        "E0"
+      ]
+    }
+  ],
+  "instances": [
+    {
+      "id": "head-instance",
+      "definitionId": "head-definition",
+      "partId": "head-pulley"
+    }
+  ],
+  "parts": [
+    {
+      "id": "frame",
+      "definitionId": null,
+      "instanceId": null,
+      "parentId": null,
+      "localRest": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "geometry": {
+        "kind": "box",
+        "dimensions": [
+          1,
+          0.1,
+          2
+        ],
+        "unit": "m"
+      },
+      "materialId": "painted-steel",
+      "sourceIds": [
+        "E0"
+      ],
+      "mass": null,
+      "auditGeometry": null,
+      "contactGeometry": null,
+      "approximationError": null
+    },
+    {
+      "id": "head-pulley",
+      "definitionId": "head-definition",
+      "instanceId": "head-instance",
+      "parentId": "frame",
+      "localRest": {
+        "position": [
+          0,
+          0,
+          1.8716814692820414
+        ],
+        "rotation_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "geometry": null,
+      "materialId": "painted-steel",
+      "sourceIds": [
+        "E0"
+      ],
+      "mass": {
+        "value": 2,
+        "unit": "kg",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "auditGeometry": null,
+      "contactGeometry": null,
+      "approximationError": null
+    }
+  ],
+  "frames": [
+    {
+      "id": "shaft-center",
+      "partId": "head-pulley",
+      "pose": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "sourceIds": [
+        "E0"
+      ]
+    }
+  ],
+  "joints": [
+    {
+      "id": "head-shaft",
+      "kind": "revolute",
+      "parent": "frame",
+      "child": "head-pulley",
+      "parentFrame": {
+        "position": [
+          0,
+          0,
+          1.8716814692820414
+        ],
+        "rotation_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "childFrame": "shaft-center",
+      "axisIn": "joint",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "limits": null,
+      "sourceIds": [
+        "E0"
+      ]
+    }
+  ],
+  "constraints": [],
+  "ports": [
+    {
+      "id": "head-interface",
+      "partId": "head-pulley",
+      "frameId": "shaft-center",
+      "kind": "shaft",
+      "direction": "bidirectional",
+      "sourceIds": [
+        "E0"
+      ]
+    }
+  ],
+  "connections": [],
+  "materials": [
+    {
+      "id": "painted-steel",
+      "preset": "paint",
+      "surfaceEvidenceIds": [
+        "E0"
+      ],
+      "physicalProperties": null
+    }
+  ],
+  "assets": [],
+  "model": {
+    "domain": "belt-bucket",
+    "recipe": "belt-bucket/kinematic-mass-v1",
+    "version": "0.1.0",
+    "assumptions": [
+      "no-slip",
+      "rigid-buckets"
+    ]
+  },
+  "parameters": {
+    "beltBucket": {
+      "headRadius": {
+        "value": 0.2,
+        "unit": "m",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "beltNeutralRadius": {
+        "value": 0.2,
+        "unit": "m",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "attachmentOffset": {
+        "value": 0,
+        "unit": "m",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "bucketPitch": {
+        "value": 0.25,
+        "unit": "m",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "beltLength": {
+        "value": 5,
+        "unit": "m",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "centerDistance": {
+        "value": 1.8716814692820414,
+        "unit": "m",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "bucketCount": {
+        "value": 20,
+        "unit": "1",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "speed": {
+        "value": 0.5,
+        "unit": "m/s",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "acceleration": {
+        "value": 0.5,
+        "unit": "m/s2",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "deceleration": {
+        "value": 0.5,
+        "unit": "m/s2",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "allowReverse": false,
+      "bucketCapacity": {
+        "value": 1,
+        "unit": "kg",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      },
+      "feedRate": {
+        "value": 0,
+        "unit": "kg/s",
+        "sourceIds": [
+          "E0"
+        ],
+        "uncertainty": null,
+        "manufacturingTolerance": null,
+        "proposedTolerance": null,
+        "numericAcceptance": null
+      }
+    }
+  },
+  "initialState": {
+    "tick": 0,
+    "time_s": 0,
+    "beltTravel_m": 0,
+    "speed_mps": 0,
+    "drivePhase_rad": 0,
+    "inventory_kg": {
+      "feed": 0,
+      "discharge": 0,
+      "output": 0,
+      "return": 0,
+      "losses": 0
+    },
+    "appliedCommandIds": []
+  },
+  "criteria": [
+    {
+      "id": "head-radius-check",
+      "aspect": "construction",
+      "kind": "geometry",
+      "partIds": [
+        "head-pulley"
+      ],
+      "claimIds": [
+        "dimension-head"
+      ],
+      "sourceIds": [
+        "E0"
+      ],
+      "expected": 0.2,
+      "unit": "m",
+      "tolerance": {
+        "manufacturing": null,
+        "project": 0.002,
+        "numeric": 1e-12
+      },
+      "critical": true
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "head-dependency",
+      "sourceIds": [
+        "E0"
+      ],
+      "claimIds": [
+        "dimension-head"
+      ],
+      "partIds": [
+        "head-pulley"
+      ],
+      "checkIds": [
+        "head-radius-check"
+      ]
+    }
+  ],
+  "commands": []
+}

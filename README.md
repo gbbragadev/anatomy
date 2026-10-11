@@ -56,6 +56,29 @@ Then, in Claude Code:
 
 That's it. No API keys and nothing to `npm install`: the kit uses only Node's built-in modules.
 
+## Faithful mode (opt-in)
+
+Creative mode remains the default. Ask for **faithful mode** when construction and behaviour must follow identified evidence. It uses [`references/fidelity.md`](references/fidelity.md) instead of the creative invention, ornament density and minimum-part rules. Unknowns stay explicit: assumption source E0 cannot support F1 dimensions, real-machine capacity, safety, wear or operational predictions.
+
+The opt-in foundation adds routing, the [normalized architecture specification](docs/specs/machine-fidelity.md), an isolated dependency boundary, strict SI/evidence contracts, [canonical assembly and analytic joints](fidelity/assembly/README.md), and a pinned upstream regression test. The [browser-pure deterministic model](fidelity/model/README.md) and [generic belt recipe](recipes/belt-bucket/README.md) are implemented as an E0 numerical demonstration. Faithful renderers, the runnable browser scene and mesh backend remain planned. The generic bucket elevator is an illustrative fixture, not a reconstruction of an identified machine. The [complete-coverage supplement](docs/specs/complete-coverage.md) retains all later execution gates and explicit deferrals.
+
+Legacy builds still need no `machine.json`, GPU, CAD importer or faithful dependency installation. Protect their output and public kit exports with Node alone:
+
+```sh
+node --test tests/upstream/legacy.test.mjs
+```
+
+The baseline records its generating runtime and platform and also guards the original committed HTML hashes. Rebuilt Raptor camera metadata and turning-stress separating planes have preexisting differences on Linux; the original pages are retained. This is a same-environment regression check, not a claim of cross-platform byte reproducibility.
+
+The optional faithful development package requires Node.js 22 or later. Its exact Ajv dependency and transitive versions are locked under `fidelity/`; nothing there is imported by a legacy builder:
+
+```sh
+npm --prefix fidelity ci
+npm --prefix fidelity test
+```
+
+The faithful workflow starts by identifying sources, evidence gaps and the supported scope. Offline high-quality rendering, native STEP/CAD conversion, DEM/FEA, generic constraint solvers, calibrated discharge and WebGPU remain deferred. See the [implementation plan](docs/superpowers/plans/2026-10-11-machine-fidelity.md) for subsequent tasks and their release gates.
+
 ## Gallery
 
 <table>

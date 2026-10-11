@@ -5,6 +5,13 @@ description: Build crafted, highly detailed, interactive isometric SVG figures t
 
 # Anatomy
 
+## Choose the mode first
+
+- **Creative (default).** Use the existing instructions below to invent a crafted explanatory object. Existing examples and kit imports remain installation-free.
+- **Faithful (opt-in).** When the user explicitly wants a machine reconstructed from evidence, read [`references/fidelity.md`](references/fidelity.md) and follow that workflow instead. Bypass the invention, ornament density and minimum-part rules below. Preserve documented construction and behaviour; keep evidence gaps explicit rather than filling them with plausible detail. E0 is an assumption and cannot support F1 dimensions.
+
+The instructions below apply to creative mode. Choosing faithful mode does not enable an unimplemented domain recipe or certify a real machine.
+
 This skill makes figures like a small instrument on a bench: a heavy base on feet, rails with tick rulers, a carriage on bushings, knurled knobs, coil springs, a dial gauge whose needle moves, screws as tiny dots. The reader understands the idea because they recognise the machine. Every number the figure shows comes from the same model that moves its parts.
 
 Eight complete examples ship with the skill. Open the closest one before you start. Each framework-free example is built with `node examples/<name>/build.mjs`, which writes a standalone HTML page next to the script; add `--light` for the light theme.
