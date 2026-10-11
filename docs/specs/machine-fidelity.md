@@ -492,3 +492,7 @@ As fontes abaixo sustentam fatos sobre o upstream, formatos, renderização e m�
 As seções de integração usam U1–U6 para descrever o código existente e distinguem as novas interfaces. As seções de contrato e evidência usam S1 e G1–G2 para formatos. As seções de comportamento usam M1–M4 e V1–V2 para delimitar modelos e validade. Renderização e medição usam R1–R6 e P1–P2. Processo, receitas e ensaios são requisitos desta arquitetura, não capacidades já executadas.
 
 Nenhuma fonte externa comprova que o toolkit proposto já existe, que os testes passaram ou que a cena coincide com uma máquina real. Esses resultados só poderão ser declarados depois de implementação, execução documentada e comparação com referências adequadas. O relatório de liberação futuro deve ligar cada critério às evidências efetivamente produzidas, e não apenas citar esta especificação.
+
+## Complete-coverage requirements
+
+The [accepted complete-coverage supplement](complete-coverage.md) preserves the full two-session checklist, ownership, execution gates and explicit deferrals. Checklist coverage is not implementation evidence.

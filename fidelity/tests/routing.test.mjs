@@ -24,7 +24,8 @@ test("faithful-workflow-keeps-evidence-gaps-and-deferred-work-explicit", () => {
   assert.match(reference, /E0 cannot support F1 dimensions/);
   assert.match(reference, /manufacturer, model, manual, CAD or measured real-machine evidence/);
   assert.match(reference, /not-evaluated/);
-  assert.match(reference, /no domain recipe is implemented/i);
+  assert.match(reference, /deterministic model/);
+  assert.match(reference, /Faithful renderers, a runnable browser demonstration/);
   for (const capability of ["offline high-quality rendering", "native STEP/CAD conversion", "DEM/FEA", "generic constraint solvers", "calibrated discharge", "WebGPU"]) {
     assert.ok(reference.includes(capability), `Deferred capability must be named: ${capability}`);
   }

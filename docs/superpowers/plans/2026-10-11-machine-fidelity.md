@@ -193,3 +193,7 @@ Shared types are defined by Task 2 in `types.d.ts` and used by name below. `Diag
 Coverage: contracts/evidence (2), frames/geometry (3), mechanics/clock/mass (4), SVG/precision/audits (5), inspection/example (6), verification/negative controls/browser/cost (7), assets/mesh decision (8), PBR/parity/device degradation (9), modularity/packaging (10). Deferred capabilities are explicit, not claimed as implemented. All five Review Focus conditions have owning negative tests.
 
 Task 1 baseline/routing and Task 2 contracts have been implemented through the approved non-Codex route. Later tasks remain planned and require their own execution and independent review gates. Continue in the existing authorized clone on `feat/machine-fidelity`; preserve the approved scope and execution constraints.
+
+## Complete-coverage requirements
+
+Follow the [accepted complete-coverage supplement](../../specs/complete-coverage.md) alongside this plan. It retains all requirements and deferred items from both reviewed source sessions; task-local implementation evidence must identify actual executed coverage.

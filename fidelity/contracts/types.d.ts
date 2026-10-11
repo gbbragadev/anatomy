@@ -311,3 +311,5 @@ export declare function compileAssembly(spec: MachineSpec, assets?: AssetMap): R
 export declare function resolvePoses(compiled: CompiledAssembly, q?: Record<string, number>): Result<Record<string, Pose>>;
 export declare function evaluateGeometry(compiled: CompiledAssembly, poses: Record<string, Pose>): GeometrySnapshot;
 export declare function verifyGeometryIdentity(compiled: CompiledAssembly, fragments: RestGeometryFragment[]): Result<{ coverage: "executed"; verdict: "passed"; geometryIdentity: string }>;
+export type { TransferEvent, RuntimeModelState, Readout, Snapshot, StepResult, Model, Clock, ClockOptions, ClockResult, ReplayResult, Ledger, LedgerCheck } from "../model/types.d.ts";
+export { createModel, createClock, advanceClock, resetClock, applyTransfer, auditLedger, replay, ModelError } from "../model/types.d.ts";
