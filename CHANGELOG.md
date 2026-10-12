@@ -19,7 +19,7 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - `tests/upstream/generate-baseline.mjs` regenerates the legacy byte and export baseline from `git archive` of a reviewed 40-hex upstream commit and has no default output path. The legacy test uses `legacy-builds.mjs`; the generator reads coverage from the approved immutable reference blob.
 - `references/equipment-demo.md`, the workflow for a live technical demo of a machine: choose the stack, write a contract with one owner per file, keep the model pure, falsify the written numbers with a clearance sweep and log each change, label the demo as simulated, and prove it in a real browser with suites that fail on any external request or console error. Taken from two demos built with the skill.
 - `references/glow.md`: the thumbnail test for a lit state, a starter plus an assembler script for short jobs, how a travelling pulse works in `examples/arcade-cabinet/live.js`, and cleaning a user's own mesh. Habits borrowed from iso-glow (MIT, April Zhu; built on iso-figure, MIT, Tolga Cohce); no code is copied.
-- CI now installs the isolated fidelity package and runs its contract, assembly, deterministic-model and legacy regression tests alongside the existing script/example gates. Local results and remote macOS/Node 22 results remain separate evidence.
+- CI now runs canonical fidelity/generator checks alongside the existing script/example gates on macOS/Node 22, and the complete fidelity package plus byte baseline on Windows/x64/Node 24.14.0. The initial macOS comparison against the Windows baseline found a Raptor light output difference; the baseline remains unchanged and both environments retain their own gates.
 
 ### Fixed
 

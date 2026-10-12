@@ -29,8 +29,8 @@ jobs:
         run: node --test scripts/*.test.mjs
       - name: Install isolated fidelity dependencies
         run: npm --prefix fidelity ci
-      - name: Fidelity and legacy regression tests
-        run: npm --prefix fidelity test
+      - name: Canonical fidelity and generator regression tests
+        run: node --test tests/fidelity/*.test.mjs tests/upstream/generate-baseline.test.mjs
       - name: Dial indicator
         run: |
           node examples/dial-indicator/build.mjs
@@ -68,3 +68,18 @@ jobs:
           git status --short
           git diff --stat --exit-code
           test -z "$(git status --porcelain)"
+
+  fidelity-windows:
+    name: Fidelity and Windows byte baseline
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.14.0
+          architecture: x64
+      - name: Install isolated fidelity dependencies
+        run: npm --prefix fidelity ci
+      - name: Full fidelity and recorded-environment legacy regression tests
+        run: npm --prefix fidelity test
