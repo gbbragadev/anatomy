@@ -1,38 +1,32 @@
 import { rmSync } from "node:fs";
 
 export async function closeChrome(chrome, profile) {
-  const running = chrome?.pid && chrome.exitCode === null && chrome.signalCode === null;
-  const pipesOpen = (chrome?.stdout && !chrome.stdout.closed) || (chrome?.stderr && !chrome.stderr.closed);
-  let closeError;
   try {
-    if (chrome?.pid && (running || pipesOpen)) {
+    if (chrome?.pid && chrome.exitCode === null && chrome.signalCode === null) {
       await new Promise((done, fail) => {
         const finish = (error) => {
           clearTimeout(timer);
-          chrome.off("close", closed);
+          chrome.off("exit", exited);
           if (error) fail(error);
           else done();
         };
-        const closed = () => finish();
-        const timer = setTimeout(() => finish(Object.assign(new Error("Chrome did not close within 5000 ms"), {
-          code: "CHROME_CLOSE_TIMEOUT", stage: "chrome-close", timeoutMs: 5000,
-        })), 5000);
-        chrome.once("close", closed);
-        if (running) {
-          try { chrome.kill("SIGKILL"); } catch (error) { finish(error); }
-        }
+        const exited = () => finish();
+        const timer = setTimeout(() => finish(new Error("Chrome did not exit within 5000 ms")), 5000);
+        chrome.once("exit", exited);
+        try { chrome.kill("SIGKILL"); } catch (error) { finish(error); }
       });
     }
   } catch (error) {
-    closeError = error;
+    console.warn("Chrome process cleanup warning:", error);
+  } finally {
+    try { chrome?.stdout?.destroy(); } catch (error) { console.warn("Chrome stdout cleanup warning:", error); }
+    try { chrome?.stderr?.destroy(); } catch (error) { console.warn("Chrome stderr cleanup warning:", error); }
   }
   try {
-    rmSync(profile, { recursive: true, force: true });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   } catch (error) {
-    if (closeError) closeError.cleanupError = error;
-    else throw error;
+    console.warn("Chrome profile cleanup warning:", error);
   }
-  if (closeError) throw closeError;
 }
 
 export async function chromePort(chrome, profile) {
@@ -64,7 +58,7 @@ export async function chromePort(chrome, profile) {
       chrome.on("exit", exited);
     });
   } catch (error) {
-    try { await closeChrome(chrome, profile); } catch (cleanupError) { error.cleanupError = cleanupError; }
+    await closeChrome(chrome, profile);
     throw error;
   }
 }

@@ -69,7 +69,7 @@ async function browser(target, { width, height, scale, throttle, noWebgl }) {
     await new Promise((done) => setTimeout(done, 1500));
     return { send, evaluate, close, problems };
   } catch (error) {
-    if (!error.cleanupError) try { await close(); } catch (cleanupError) { error.cleanupError = cleanupError; }
+    await close();
     throw error;
   }
 }
@@ -620,7 +620,7 @@ async function main() {
     console.error(error);
     failed++;
   } finally {
-    try { await page?.close(); } catch (cleanupError) { console.error(cleanupError); failed++; }
+    await page?.close();
   }
   console.log(failed ? `turn check failed: ${failed}` : "turn check passed");
   process.exit(failed ? 1 : 0);

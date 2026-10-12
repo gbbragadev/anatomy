@@ -123,13 +123,7 @@ async function main() {
   let cdp;
   const finish = async (code, error) => {
     cdp?.close();
-    try {
-      await closeChrome(chrome, profile);
-    } catch (cleanupError) {
-      if (error) error.cleanupError = cleanupError;
-      else error = cleanupError;
-      code = 1;
-    }
+    await closeChrome(chrome, profile);
     if (error) console.error(error);
     process.exit(code);
   };

@@ -51,6 +51,32 @@ test("an exited browser with inherited stdio cannot hang profile cleanup", { tim
   assert.ok(Number.isInteger(descendant) && descendant > 0);
   await exited;
   process.kill(descendant, 0);
-  await assert.rejects(closeChrome(parent, root), (error) => error.code === "CHROME_CLOSE_TIMEOUT");
+  await closeChrome(parent, root);
+  assert.equal(parent.stdout.destroyed, true);
+  assert.equal(parent.stderr.destroyed, true);
   await assert.rejects(access(root), (error) => error.code === "ENOENT");
+});
+
+test("a locked profile warns without failing completed work", { skip: process.platform !== "win32", timeout: 30000 }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "anatomy-locked-profile-"));
+  let holder;
+  t.after(async () => {
+    if (holder) {
+      try { process.kill(holder, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+    }
+    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  });
+  const source = `const {spawn}=await import("node:child_process");const {once}=await import("node:events");const child=spawn(process.execPath,["-e","process.send('ready');setInterval(()=>{},1000)"],{cwd:process.argv[1],detached:true,windowsHide:true,stdio:["ignore","ignore","ignore","ipc"]});await once(child,"message");child.disconnect();child.unref();console.log("holder:"+child.pid);const {closeChrome}=await import(process.argv[2]);const result=1+1;await closeChrome(undefined,process.argv[1]);console.log("result:"+result);`;
+  let result;
+  try {
+    result = { code: 0, ...await execute(process.execPath, ["--input-type=module", "-e", source, root, new URL("chrome-port.mjs", import.meta.url).href], { timeout: 20000 }) };
+  } catch (error) {
+    result = { code: error.code, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+  }
+  holder = Number(/holder:(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(Number.isInteger(holder) && holder > 0, JSON.stringify(result));
+  assert.equal(result.code, 0, JSON.stringify(result));
+  assert.match(result.stdout, /result:2/);
+  assert.match(result.stderr, /EPERM|EBUSY/);
+  await access(root);
 });
