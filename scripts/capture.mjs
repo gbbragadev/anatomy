@@ -22,7 +22,8 @@ function usage() {
   --height <px>       viewport height (default 1000)
   --scale <n>         device pixel ratio (default 2)
   --wait <ms>         time to let the page settle before the first shot (default 2500)
-  --select <css>      clip to this element (default: .iso-plate, else the whole page)
+  --select <css>      clip to this element; an explicit missing target exits 1 without writing PNGs
+                      default selection is unchanged: first .iso-plate, else SVG/page
   --zoom <x,y,w,h>    clip a region inside the selected element, in CSS px, for close-up checks
   --zoom-scale <n>    pixel ratio for --zoom shots (default 4)
   --hover <fx,fy>     move the mouse to this fraction of the selected element first (e.g. 0.6,0.5)
@@ -160,8 +161,11 @@ async function main() {
     await evaluate(`(async()=>{const h=document.documentElement.scrollHeight;for(let y=0;y<h;y+=400){scrollTo(0,y);await new Promise(r=>setTimeout(r,60))}scrollTo(0,0)})()`);
     await sleep(Math.max(0, options.wait - 1500));
     const select = options.select ?? ".iso-plate";
-    const boxOf = async () =>
-      evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(select)})||document.querySelector("svg")||document.body;el.scrollIntoView({block:"center"});const r=el.getBoundingClientRect();return {x:r.left+scrollX,y:r.top+scrollY,w:r.width,h:r.height,vx:r.left,vy:r.top}})()`);
+    const boxOf = async () => {
+      const box = await evaluate(`(()=>{let el=document.querySelector(${JSON.stringify(select)});if(${options.select != null}&&!el)return null;el=el||document.querySelector("svg")||document.body;el.scrollIntoView({block:"center"});const r=el.getBoundingClientRect();return {x:r.left+scrollX,y:r.top+scrollY,w:r.width,h:r.height,vx:r.left,vy:r.top}})()`);
+      if (!box) throw new Error(`Explicit capture selector did not match an element: ${select}`);
+      return box;
+    };
     let box = await boxOf();
     if (options.hover) {
       await sleep(300);

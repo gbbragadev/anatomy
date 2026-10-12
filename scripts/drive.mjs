@@ -27,6 +27,8 @@ function usage() {
   Put anything with eval strings in an --actions file: inline JSON quoting breaks easily.
 
 Actions run in order. A missing or null selector means the first .iso-plate (the key action focuses [tabindex="0"]).
+An explicit CSS selector that matches nothing stops the run with exit 1 before acting or writing an image.
+The optional turn argument names a 3D group, not a CSS selector.
 Fractions are 0..1 across the element.
   ["scroll", sel]                         scroll an element into the middle of the viewport
   ["wait", ms]                            wait
@@ -172,7 +174,8 @@ async function main() {
     if (navigation.error) throw new Error(`Navigation failed: ${navigation.error.message}`);
     if (navigation.result?.errorText) throw new Error(`Navigation failed: ${navigation.result.errorText}`);
     await sleep(1200);
-    const boxOf = (selector) => evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector ?? ".iso-plate")})||document.body;const r=el.getBoundingClientRect();return {x:r.left,y:r.top,w:r.width,h:r.height,sx:scrollX,sy:scrollY}})()`);
+    const elementExpression = (selector, fallback = ".iso-plate") => `(()=>{const el=document.querySelector(${JSON.stringify(selector ?? fallback)});if(${selector != null}&&!el)throw new Error(${JSON.stringify(`Explicit selector did not match an element: ${selector}`)});return el})()`;
+    const boxOf = (selector) => evaluate(`(()=>{const el=${elementExpression(selector)}||document.body;const r=el.getBoundingClientRect();return {x:r.left,y:r.top,w:r.width,h:r.height,sx:scrollX,sy:scrollY}})()`);
     const readout = () => evaluate(`(document.querySelector("[data-readout]")||{}).textContent||""`);
     const capture = async (selector, scale = 1, region) => {
       const box = await boxOf(selector);
@@ -191,7 +194,7 @@ async function main() {
     for (const action of actions) {
       const [kind, ...args] = action;
       if (kind === "wait") await sleep(args[0]);
-      else if (kind === "scroll") await evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(args[0] ?? ".iso-plate")});if(el)el.scrollIntoView({block:"center"})})()`);
+      else if (kind === "scroll") await evaluate(`(()=>{const el=${elementExpression(args[0])};if(el)el.scrollIntoView({block:"center"})})()`);
       else if (kind === "move") {
         const box = await boxOf(args[0]);
         const to = [box.x + box.w * args[1], box.y + box.h * args[2]];
@@ -221,7 +224,7 @@ async function main() {
         await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: to[0], y: to[1], button: "left", buttons: 0, clickCount: 1 });
         mouse = to;
       } else if (kind === "key") {
-        await evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(args[1] ?? '[tabindex="0"]')});if(el)el.focus()})()`);
+        await evaluate(`(()=>{const el=${elementExpression(args[1], '[tabindex="0"]')};if(el)el.focus()})()`);
         const key = args[0];
         const named = { " ": "Space", "-": "Minus", "=": "Equal", ",": "Comma", ".": "Period", "/": "Slash", ";": "Semicolon", "'": "Quote", "[": "BracketLeft", "]": "BracketRight", "\\": "Backslash", "`": "Backquote" };
         const code = args[2] ?? (named[key] ?? (/^[0-9]$/.test(key) ? `Digit${key}` : key.length === 1 ? `Key${key.toUpperCase()}` : key));
@@ -263,6 +266,7 @@ async function main() {
         await evaluate(`(()=>{if(!window.__isoTurn)return false;${call};return new Promise((done)=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true))))})()`);
       } else if (kind === "orbit") {
         const [out, from, to, step, selector, scale, region, columns] = args;
+        if (selector != null) await evaluate(elementExpression(selector));
         const frames = [];
         const labels = [];
         for (let at = from; step > 0 ? at <= to + 1e-9 : at >= to - 1e-9; at += step) {
@@ -276,6 +280,7 @@ async function main() {
         console.log(`orbit ${out} · ${frames.length} frames ${from}°…${to}° every ${step}°`);
       } else if (kind === "lines") {
         const [out, selector, extra] = args;
+        if (selector != null) await evaluate(elementExpression(selector));
         const result = await evaluate(`(${LINE_ENDS})(${JSON.stringify({ select: selector ?? null, show: Boolean(out), ...(extra ?? {}) })})`);
         if (!result) {
           console.log("lines: the check did not run");

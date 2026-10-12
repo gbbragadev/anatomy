@@ -17,6 +17,10 @@ node scripts/capture.mjs http://localhost:3000/docs --select "figure:nth-of-type
 ```
 `--select` takes any CSS selector; by default it clips to the first `.iso-plate`. Each `--times` delay counts from the first shot, so `1200,2400,3600` shoots at about 1.2, 2.4 and 3.6 s after it (a capture takes 60–200 ms, so delays closer together than that run late), saved as `name-<ms>.png`. `--key` sends the same key codes as `drive.mjs` (`7` as `Digit7`, `.` as `Period`; write a comma as `Comma`, since the list is comma separated). The other options are `--height` (1000), `--scale` (2), `--wait` (2500 ms before the first shot), `--zoom-scale` (4) and `--theme dark|light`. Read every PNG you make: open it and look.
 
+An explicit `--select` that matches no element fails with exit 1 before initial or timed PNGs are written; it does not fall back to another figure. The omitted-selector fallback remains unchanged. Keep existing output files intact on a selector failure.
+
+Known separate boundary limit: a padded clip with a negative page origin can return pixels from the first figure despite correct target metadata and PNG dimensions. A left-edge target reproduced this in both capture and drive; a positive explicit region showed the correct target. The missing-selector guard does not change padding or fix that boundary. Keep it open, inspect pixels rather than dimensions alone, and use inset controls to evaluate selector resolution independently. Any boundary/padding policy needs a separate decision.
+
 Both scripts start Chrome with WebGL on (`--enable-unsafe-swiftshader --ignore-gpu-blocklist`), so shaders show in `capture.mjs` stills too. Use `drive.mjs` for anything that has to be timed or slowed down.
 
 ## Drive
@@ -31,6 +35,8 @@ node scripts/drive.mjs page.html --actions steps.json --no-webgl
 node scripts/drive.mjs page-light.html --actions steps.json --preload slow.js
 ```
 Options are `--width` (1440), `--height` (1100), `--scale` (1), `--reduced`, `--theme dark|light`, `--no-webgl` (every `getContext("webgl")` or `"webgl2"` returns `null`, to check the SVG fallback), `--preload file.js` (a script that runs before the page's own scripts: counters, stubs, hooks, or `window.__driveSpeed=0.04` to run slowly from the first frame) and `--actions file.json`. Selectors default to the first `.iso-plate`, and fractions run 0..1 across the element.
+
+Explicit CSS targets are required to match at resolution time for shot, click, move, drag, scroll, key, lines, sheet and orbit. A missing target stops the run with exit 1 rather than using body geometry, skipping input or continuing later actions. Omitted/null selectors keep their defaults; key focuses the first `[tabindex="0"]`. The optional `turn` argument is a named 3D group, not CSS, and is outside this DOM-selector policy.
 
 `--theme` (in both scripts) only emulates `prefers-color-scheme`. Kit pages choose their theme when they are built (`data-theme` on `<body>`) and ignore that media query, so to check the light theme, build with `--light` and drive the `-light.html` file.
 
