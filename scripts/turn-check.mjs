@@ -1,6 +1,7 @@
-import { chromePort } from "./chrome-port.mjs";
+import { chromePort, closeChrome } from "./chrome-port.mjs";
+import { connectCDP } from "./cdp-client.mjs";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -36,50 +37,41 @@ function chromePath() {
 
 async function browser(target, { width, height, scale, throttle, noWebgl }) {
   const profile = mkdtempSync(join(tmpdir(), "turn-check-"));
-  const chrome = spawn(chromePath(), ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", "--hide-scrollbars", "--allow-file-access-from-files", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "about:blank"]);
-  const port = await chromePort(chrome, profile);
-  const page = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
-  const socket = new WebSocket(page.webSocketDebuggerUrl);
-  let id = 0;
-  const pending = new Map();
-  const problems = [];
-  socket.onmessage = (message) => {
-    const data = JSON.parse(message.data);
-    if (data.id && pending.has(data.id)) {
-      pending.get(data.id)(data);
-      pending.delete(data.id);
-    } else if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) problems.push(`console.${data.params.type}: ${data.params.args.map((arg) => arg.value ?? arg.description ?? "").join(" ").slice(0, 400)}`);
-    else if (data.method === "Runtime.exceptionThrown") problems.push(`exception: ${data.params.exceptionDetails.exception?.description ?? data.params.exceptionDetails.text}`.slice(0, 400));
+  let chrome, cdp;
+  const close = async () => {
+    cdp?.close();
+    await closeChrome(chrome, profile);
   };
-  await new Promise((done) => (socket.onopen = done));
-  const send = (method, params = {}) =>
-    new Promise((done) => {
-      const call = ++id;
-      pending.set(call, done);
-      socket.send(JSON.stringify({ id: call, method, params }));
+  try {
+    chrome = spawn(chromePath(), ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", "--hide-scrollbars", "--allow-file-access-from-files", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "about:blank"]);
+    const port = await chromePort(chrome, profile);
+    const problems = [];
+    cdp = await connectCDP(port, {
+      onEvent: (data) => {
+        if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) problems.push(`console.${data.params.type}: ${data.params.args.map((arg) => arg.value ?? arg.description ?? "").join(" ").slice(0, 400)}`);
+        else if (data.method === "Runtime.exceptionThrown") problems.push(`exception: ${data.params.exceptionDetails.exception?.description ?? data.params.exceptionDetails.text}`.slice(0, 400));
+      },
     });
-  const evaluate = async (expression) => {
-    const result = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
-    if (result.result?.exceptionDetails) throw new Error(JSON.stringify(result.result.exceptionDetails).slice(0, 800));
-    return result.result?.result?.value;
-  };
-  await send("Runtime.enable");
-  await send("Page.enable");
-  const NO_GL = `(()=>{const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...rest){if(/webgl/.test(String(kind))&&!this.dataset.check)return null;return get.call(this,kind,...rest)}})();`;
-  if (noWebgl) await send("Page.addScriptToEvaluateOnNewDocument", { source: NO_GL });
-  await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: scale, mobile: width < 600 });
-  if (throttle > 1) await send("Emulation.setCPUThrottlingRate", { rate: throttle });
-  const url = /^https?:|^file:/.test(target) ? target : pathToFileURL(resolve(target)).href;
-  await send("Page.navigate", { url });
-  await new Promise((done) => setTimeout(done, 1500));
-  const close = () => {
-    socket.close();
-    chrome.kill("SIGKILL");
-    try {
-      rmSync(profile, { recursive: true, force: true });
-    } catch {}
-  };
-  return { send, evaluate, close, problems };
+    const { send } = cdp;
+    const evaluate = async (expression) => {
+      const result = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
+      if (result.result?.exceptionDetails) throw new Error(JSON.stringify(result.result.exceptionDetails).slice(0, 800));
+      return result.result?.result?.value;
+    };
+    await send("Runtime.enable");
+    await send("Page.enable");
+    const NO_GL = `(()=>{const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...rest){if(/webgl/.test(String(kind))&&!this.dataset.check)return null;return get.call(this,kind,...rest)}})();`;
+    if (noWebgl) await send("Page.addScriptToEvaluateOnNewDocument", { source: NO_GL });
+    await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: scale, mobile: width < 600 });
+    if (throttle > 1) await send("Emulation.setCPUThrottlingRate", { rate: throttle });
+    const url = /^https?:|^file:/.test(target) ? target : pathToFileURL(resolve(target)).href;
+    await send("Page.navigate", { url });
+    await new Promise((done) => setTimeout(done, 1500));
+    return { send, evaluate, close, problems };
+  } catch (error) {
+    if (!error.cleanupError) try { await close(); } catch (cleanupError) { error.cleanupError = cleanupError; }
+    throw error;
+  }
 }
 
 const HELPERS = String.raw`(() => {
@@ -502,9 +494,10 @@ async function main() {
   const statesFile = value("--states", null);
   const states = statesFile ? JSON.parse(readFileSync(statesFile, "utf8")) : null;
   if (statesFile && (!Array.isArray(states) || !states.length)) throw new Error("--states must contain a nonempty JSON list of poses");
-  const page = await browser(target, options);
+  let page;
   const labelOf = (state, index) => (typeof state === "number" ? `${state.toFixed(3)}°` : `state ${index}`);
   try {
+    page = await browser(target, options);
     const info = await page.evaluate(HELPERS);
     console.log(`page ${info.W}×${info.H} · live layers ${info.layers.filter(Boolean).join(", ")} · theme ${info.theme}`);
     await page.evaluate(`window.__isoTurn.set(0) && 0`);
@@ -627,7 +620,7 @@ async function main() {
     console.error(error);
     failed++;
   } finally {
-    page.close();
+    try { await page?.close(); } catch (cleanupError) { console.error(cleanupError); failed++; }
   }
   console.log(failed ? `turn check failed: ${failed}` : "turn check passed");
   process.exit(failed ? 1 : 0);

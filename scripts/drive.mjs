@@ -1,6 +1,7 @@
-import { chromePort } from "./chrome-port.mjs";
+import { chromePort, closeChrome } from "./chrome-port.mjs";
+import { connectCDP } from "./cdp-client.mjs";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -119,38 +120,32 @@ async function main() {
   const profile = mkdtempSync(join(tmpdir(), "iso-drive-"));
   const chrome = spawn(binary, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", "--hide-scrollbars", "--allow-file-access-from-files", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "about:blank"]);
   const port = await chromePort(chrome, profile);
-  const finish = (code) => {
-    chrome.kill("SIGKILL");
+  let cdp;
+  const finish = async (code, error) => {
+    cdp?.close();
     try {
-      rmSync(profile, { recursive: true, force: true });
-    } catch {}
+      await closeChrome(chrome, profile);
+    } catch (cleanupError) {
+      if (error) error.cleanupError = cleanupError;
+      else error = cleanupError;
+      code = 1;
+    }
+    if (error) console.error(error);
     process.exit(code);
   };
   try {
-    const page = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
-    const socket = new WebSocket(page.webSocketDebuggerUrl);
-    let id = 0;
-    const pending = new Map();
     const problems = [];
-    socket.onmessage = (message) => {
-      const data = JSON.parse(message.data);
-      if (data.id && pending.has(data.id)) {
-        pending.get(data.id)(data);
-        pending.delete(data.id);
-      } else if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) {
-        problems.push(`console.${data.params.type}: ${data.params.args.map((arg) => arg.value ?? arg.description ?? "").join(" ").slice(0, 600)}`);
-      } else if (data.method === "Runtime.exceptionThrown") {
-        const detail = data.params.exceptionDetails;
-        problems.push(`exception: ${detail.exception?.description ?? detail.text}`.slice(0, 600));
-      }
-    };
-    await new Promise((done) => (socket.onopen = done));
-    const send = (method, params = {}) =>
-      new Promise((done) => {
-        const call = ++id;
-        pending.set(call, done);
-        socket.send(JSON.stringify({ id: call, method, params }));
-      });
+    cdp = await connectCDP(port, {
+      onEvent: (data) => {
+        if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) {
+          problems.push(`console.${data.params.type}: ${data.params.args.map((arg) => arg.value ?? arg.description ?? "").join(" ").slice(0, 600)}`);
+        } else if (data.method === "Runtime.exceptionThrown") {
+          const detail = data.params.exceptionDetails;
+          problems.push(`exception: ${detail.exception?.description ?? detail.text}`.slice(0, 600));
+        }
+      },
+    });
+    const { send } = cdp;
     const evaluate = async (expression) => {
       const reply = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
       if (reply.error) throw new Error(reply.error.message);
@@ -298,10 +293,8 @@ async function main() {
       }
     }
     console.log(problems.length ? problems.join("\n") : "console: clean");
-    socket.close();
-    finish(failed ? 1 : 0);
+    await finish(failed ? 1 : 0);
   } catch (error) {
-    console.error(error);
-    finish(1);
+    await finish(1, error);
   }
 }

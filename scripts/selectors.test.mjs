@@ -24,12 +24,32 @@ async function sandbox(t) {
 }
 
 async function run(name, page, args) {
+  const started = Date.now();
+  const env = { ...process.env, ANATOMY_CDP_CALL_TIMEOUT_MS: "30000" };
+  delete env.ANATOMY_CDP_FETCH_TIMEOUT_MS;
+  delete env.ANATOMY_CDP_OPEN_TIMEOUT_MS;
+  const options = { timeout: 45000, maxBuffer: 2 * 1024 * 1024, env };
   try {
-    return { code: 0, ...await execute(process.execPath, [script(name), page, ...args], { timeout: 45000, maxBuffer: 2 * 1024 * 1024 }) };
+    return { code: 0, ...await execute(process.execPath, [script(name), page, ...args], options), elapsedMs: Date.now() - started };
   } catch (error) {
-    return { code: error.code, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+    return { code: error.code, stdout: error.stdout ?? "", stderr: error.stderr ?? "", elapsedMs: Date.now() - started };
   }
 }
+
+const rejectionDetails = (result) => JSON.stringify({
+  code: result.code,
+  elapsedMs: result.elapsedMs,
+  timedOut: `${result.stdout}\n${result.stderr}`.includes("timed out"),
+  didNotOpen: `${result.stdout}\n${result.stderr}`.includes("did not open"),
+  connectionClosed: `${result.stdout}\n${result.stderr}`.includes("connection closed"),
+  stdout: result.stdout,
+  stderr: result.stderr,
+});
+const guardRejected = (result) => {
+  const diagnostic = rejectionDetails(result);
+  assert.equal(result.code, 1, diagnostic);
+  assert.match(`${result.stdout}\n${result.stderr}`, /did not match an element/, diagnostic);
+};
 
 const probe = (stdout) => JSON.parse(stdout.split(/\r?\n/).findLast((line) => line.startsWith("eval: ")).slice(6));
 const dimensions = async (path) => {
@@ -80,7 +100,7 @@ const actions = {
 for (const [name, action] of Object.entries(actions)) test(`drive rejects ${name} with an explicit missing target before writing or continuing`, async (t) => {
   const box = await sandbox(t);
   const result = await run("drive", box.page, [JSON.stringify([action(box.output, "#target-typo"), ["eval", "({afterInvalid:true})"]])]);
-  assert.equal(result.code, 1, `${result.stdout}\n${result.stderr}`);
+  guardRejected(result);
   assert.equal(existsSync(box.output), false);
   assert.ok(!result.stdout.includes('"afterInvalid":true'));
 });
@@ -88,7 +108,7 @@ for (const [name, action] of Object.entries(actions)) test(`drive rejects ${name
 test("capture rejects an explicit missing target without initial or timed PNG files", async (t) => {
   const box = await sandbox(t);
   const result = await run("capture", box.page, ["--select", "#target-typo", "--out", box.output, "--wait", "0", "--times", "20"]);
-  assert.equal(result.code, 1, `${result.stdout}\n${result.stderr}`);
+  guardRejected(result);
   assert.equal(existsSync(box.output), false);
   assert.equal(existsSync(box.output.replace(/\.png$/, "-20.png")), false);
 });
@@ -98,8 +118,19 @@ test("capture does not overwrite an existing output after a target typo", async 
   const sentinel = Buffer.from("existing capture bytes");
   await writeFile(box.output, sentinel);
   const result = await run("capture", box.page, ["--select", "#target-typo", "--out", box.output, "--wait", "0"]);
-  assert.equal(result.code, 1, `${result.stdout}\n${result.stderr}`);
+  guardRejected(result);
   assert.deepEqual(await readFile(box.output), sentinel);
+});
+
+test("capture reports target lookup exceptions instead of a missing selector", async (t) => {
+  const box = await sandbox(t);
+  await writeFile(box.page, `${fixture}<script>const query=document.querySelector.bind(document);document.querySelector=(selector)=>{if(selector==="#target")throw new Error("capture target lookup failed");return query(selector)};</script>`);
+  const result = await run("capture", box.page, ["--select", "#target", "--out", box.output, "--wait", "0"]);
+  const diagnostic = rejectionDetails(result);
+  assert.equal(result.code, 1, diagnostic);
+  assert.match(result.stderr, /capture target lookup failed/, diagnostic);
+  assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /did not match an element/, diagnostic);
+  assert.equal(existsSync(box.output), false);
 });
 
 test("capture preserves explicit target and default plate crops", async (t) => {

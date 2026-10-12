@@ -1,6 +1,7 @@
-import { chromePort } from "./chrome-port.mjs";
+import { chromePort, closeChrome } from "./chrome-port.mjs";
+import { connectCDP } from "./cdp-client.mjs";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -113,39 +114,39 @@ async function main() {
     "about:blank",
   ]);
   const port = await chromePort(chrome, profile);
-  const finish = (code) => {
-    chrome.kill("SIGKILL");
+  let cdp;
+  const finish = async (code, error) => {
+    cdp?.close();
     try {
-      rmSync(profile, { recursive: true, force: true });
-    } catch {}
+      await closeChrome(chrome, profile);
+    } catch (cleanupError) {
+      if (error) error.cleanupError = cleanupError;
+      else error = cleanupError;
+      code = 1;
+    }
+    if (error) console.error(error);
     process.exit(code);
   };
   try {
-    const target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
-    const socket = new WebSocket(target.webSocketDebuggerUrl);
-    let id = 0;
-    const pending = new Map();
     const problems = [];
-    socket.onmessage = (message) => {
-      const data = JSON.parse(message.data);
-      if (data.id && pending.has(data.id)) {
-        pending.get(data.id)(data);
-        pending.delete(data.id);
-      } else if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) {
-        problems.push(`console.${data.params.type}: ${data.params.args.map((arg) => arg.value ?? arg.description ?? "").join(" ").slice(0, 400)}`);
-      } else if (data.method === "Runtime.exceptionThrown") {
-        const detail = data.params.exceptionDetails;
-        problems.push(`exception: ${detail.exception?.description ?? detail.text}`.slice(0, 600));
-      }
+    cdp = await connectCDP(port, {
+      onEvent: (data) => {
+        if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) {
+          problems.push(`console.${data.params.type}: ${data.params.args.map((arg) => arg.value ?? arg.description ?? "").join(" ").slice(0, 400)}`);
+        } else if (data.method === "Runtime.exceptionThrown") {
+          const detail = data.params.exceptionDetails;
+          problems.push(`exception: ${detail.exception?.description ?? detail.text}`.slice(0, 600));
+        }
+      },
+    });
+    const { send } = cdp;
+    const evaluate = async (expression) => {
+      const reply = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
+      if (reply.error) throw new Error(reply.error.message);
+      const exception = reply.result?.exceptionDetails;
+      if (exception) throw new Error(exception.exception?.description ?? exception.text);
+      return reply.result?.result?.value;
     };
-    await new Promise((done) => (socket.onopen = done));
-    const send = (method, params = {}) =>
-      new Promise((done) => {
-        const call = ++id;
-        pending.set(call, done);
-        socket.send(JSON.stringify({ id: call, method, params }));
-      });
-    const evaluate = async (expression) => (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
     const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
     await send("Runtime.enable");
     await send("Page.enable");
@@ -219,10 +220,8 @@ async function main() {
     console.log(`clip ${Math.round(box.x)},${Math.round(box.y)} ${Math.round(box.w)}x${Math.round(box.h)} · readout "${readout}" · scrolls sideways: ${sideways ? "YES" : "no"}`);
     if (readouts.length) console.log(`readout over time: ${readouts.join(" · ")}`);
     console.log(problems.length ? problems.join("\n") : "console: clean");
-    socket.close();
-    finish(0);
+    await finish(0);
   } catch (error) {
-    console.error(error);
-    finish(1);
+    await finish(1, error);
   }
 }
