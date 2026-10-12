@@ -9,7 +9,6 @@ export const BUILDS = EXAMPLES.flatMap((name) => [
 ]);
 BUILDS.push(["examples/turning-dial/build.mjs", "--light", "--verify"], ["examples/turning-dial/stress.mjs", "--light"]);
 
-// Sorted HTML paths relative to `root`, always with "/" so they match the baseline keys on every platform.
 export function htmlFiles(root, directory) {
   if (!directory) return EXAMPLES.flatMap((name) => htmlFiles(root, join(root, "examples", name))).sort();
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

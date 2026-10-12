@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { validateMachine, compileAssembly, evaluateGeometry } from "../../fidelity/index.mjs";
 import { prismTopology } from "../../fidelity/assembly/geometry.mjs";
-import { pose, box, part, rawMachine, normalized, diagnostic, movingPair, near } from "./assembly-fixtures.mjs";
+import { pose, box, part, frame, rawMachine, normalized, diagnostic, movingPair, near } from "./assembly-fixtures.mjs";
 
 const polygon = (count) => Array.from({ length: count }, (_, index) => [Math.cos(2 * Math.PI * index / count), Math.sin(2 * Math.PI * index / count)]);
 const prism = (vertices, height = 1) => ({ kind: "prism", vertices, height, unit: "m" });
@@ -131,4 +131,92 @@ test("R5 failed definition geometry retains definition and part evidence with th
   assert.equal(failure.path, "/definitions/0/geometry/vertices");
   assert.equal(failure.partId, "defined");
   assert.deepEqual(failure.sourceIds, ["E0", "shape-evidence"]);
+});
+
+const connectedAt = (base, fromOffset = 0, toOffset = 0, rotation = [0, 0, 0, 1]) => {
+  const raw = rawMachine([part("base", null, pose(base, rotation)), part("bearing", "base")]);
+  raw.frames = [frame("from-frame", "base", pose([fromOffset, 0, 0])), frame("to-frame", "bearing", pose([toOffset, 0, 0]))];
+  raw.ports = [
+    { id: "from-port", partId: "base", frameId: "from-frame", kind: "mount", direction: "bidirectional", sourceIds: ["E0"] },
+    { id: "to-port", partId: "bearing", frameId: "to-frame", kind: "mount", direction: "bidirectional", sourceIds: ["E0"] }
+  ];
+  raw.connections = [{ id: "mount", fromPortId: "from-port", toPortId: "to-port", kind: "mechanical", intendedContact: true, sourceIds: ["E0"] }];
+  return raw;
+};
+
+test("N4 a nanometre interface gap cannot become a passed zero residual at a large base", () => {
+  for (const [base, rotation] of [
+    [[1e8, 0, 0], [0, 0, 0, 1]],
+    [[0, 1e8, 0], [0, 0, Math.SQRT1_2, Math.SQRT1_2]]
+  ]) for (const [from, to] of [[0, 1e-9], [0, -1e-9], [1, 1.000000001]]) {
+    let result;
+    assert.doesNotThrow(() => { result = compileAssembly(normalized(connectedAt(base, from, to, rotation)), {}); });
+    assert.equal(result.ok, false);
+    assert.equal("value" in result, false);
+    const failure = result.diagnostics.find((entry) => entry.code === "UNSUPPORTED_POSE_PRECISION");
+    assert.equal(failure.path, "/connections/0");
+    assert.equal(failure.partId, "bearing");
+    assert.deepEqual(failure.sourceIds, ["E0"]);
+  }
+});
+
+test("N4 ordinary and representable large-base gaps retain the existing alignment rejection", () => {
+  for (const [base, gap] of [[10, 1e-9], [1e8, 0.25]]) {
+    const result = compileAssembly(normalized(connectedAt([base, 0, 0], 0, gap)), {});
+    assert.equal(result.ok, false);
+    diagnostic(result, "INTERFACE_MISALIGNED");
+    assert.equal(result.diagnostics.some((entry) => entry.code === "UNSUPPORTED_POSE_PRECISION"), false);
+  }
+});
+
+test("N4 zero, ordinary and representable rotated interface offsets stay aligned", () => {
+  for (const [base, offset, rotation] of [
+    [[10, 0, 0], 0.1, [0, 0, 0, 1]],
+    [[10, 0, 0], 1e-9, [0, 0, 0, 1]],
+    [[1e8, 0, 0], 0, [0, 0, 0, 1]],
+    [[1e8, 0, 0], 0.25, [0, 0, 0, 1]],
+    [[0, 1e8, 0], 0.25, [0, 0, Math.SQRT1_2, Math.SQRT1_2]]
+  ]) {
+    const result = compileAssembly(normalized(connectedAt(base, offset, offset, rotation)), {});
+    assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+    assert.equal(result.value.interfaces[0].verdict, "passed");
+    assert.equal(result.value.interfaces[0].residual.position_m, 0);
+  }
+});
+
+test("N4 snapshot evaluation rejects interface offset loss after translation", () => {
+  const compiled = compileAssembly(normalized(connectedAt([10, 0, 0], 1e-9, 1e-9)), {});
+  assert.equal(compiled.ok, true, JSON.stringify(compiled.diagnostics));
+  const poses = { base: pose([1e8, 0, 0]), bearing: pose([1e8, 0, 0]) };
+  let result;
+  assert.doesNotThrow(() => { result = evaluateGeometry(compiled.value, poses); });
+  assert.equal(result.verdict, "failed");
+  assert.deepEqual(result.interfaces, []);
+  assert.deepEqual(result.fragments, []);
+  assert.equal(result.bounds, null);
+  diagnostic(result, "UNSUPPORTED_POSE_PRECISION");
+});
+
+test("N4 nested compound placement cannot discard a significant local offset", () => {
+  const geometry = { kind: "compound", components: [{ id: "outer", pose: pose([1e8, 0, 0]), geometry: { kind: "compound", components: [{ id: "inner", pose: pose([1e-9, 0, 0]), geometry: box() }] } }] };
+  let result;
+  assert.doesNotThrow(() => { result = compileShape(geometry); });
+  assert.equal(result.ok, false);
+  assert.equal("value" in result, false);
+  const failure = result.diagnostics.find((entry) => entry.code === "UNSUPPORTED_POSE_PRECISION");
+  assert.equal(failure.path, "/parts/0/geometry/components/0/geometry/components/0/pose");
+  assert.equal(failure.partId, "body");
+});
+
+test("N4 compound world placement rejects offset loss at compile and later evaluation", () => {
+  const geometry = { kind: "compound", components: [{ id: "detail", pose: pose([1e-9, 0, 0]), geometry: box() }] };
+  const initial = compileShape(geometry, pose([1e8, 0, 0]));
+  assert.equal(initial.ok, false);
+  diagnostic(initial, "UNSUPPORTED_POSE_PRECISION");
+  const compiled = compileShape(geometry, pose([10, 0, 0]));
+  assert.equal(compiled.ok, true, JSON.stringify(compiled.diagnostics));
+  const result = evaluateGeometry(compiled.value, { body: pose([1e8, 0, 0]) });
+  assert.equal(result.verdict, "failed");
+  assert.deepEqual(result.fragments, []);
+  diagnostic(result, "UNSUPPORTED_POSE_PRECISION");
 });

@@ -2,6 +2,8 @@
 
 > Implementação por tarefas verificáveis, com revisão independente e preservação da compatibilidade com o upstream.
 
+> Snapshot histórico de planejamento: o pin `dbf697a` abaixo é a base original, não o baseline atual. A integração publicada `15cd4fc` incorporou upstream `240a9bf` e registrou o re-pin em [`references/fidelity.md`](../../../references/fidelity.md). Correções posteriores de auditoria e precisão preservam os bytes desse baseline; não reescrevem retroativamente este plano nem concedem aprovação de renderer faithful.
+
 **Goal:** Entregar um toolkit de máquinas com modo fiel opt-in, evidências rastreáveis e um elevador genérico utilizável; primeiro em SVG e depois com malhas/PBR opcionais.
 
 **Architecture:** Preservar o fluxo criativo da Anatomy e acrescentar uma entrada separada para o modo fiel. Um contrato em SI produz geometria canônica e snapshots imutáveis, consumidos pelos adaptadores SVG e de malhas. Evidência, coerência numérica, apresentação e custo recebem resultados independentes.

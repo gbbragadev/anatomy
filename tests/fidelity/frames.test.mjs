@@ -90,7 +90,7 @@ test("analytic ratios derive unspecified channels and retain explicit residuals"
   const result = resolvePoses(compiled, { "a-joint": 0.3 });
   assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
   near(result.value.b.rotation_xyzw, [0, 0, Math.sin(-0.25), Math.cos(-0.25)]);
-  assert.ok(result.diagnostics.some((entry) => entry.code === "CONSTRAINT_RESIDUAL" && entry.message.includes("0")));
+  diagnostic(result, "CONSTRAINT_RESIDUAL");
   const conflict = resolvePoses(compiled, { "a-joint": 0.3, "b-joint": 0 });
   assert.equal(conflict.ok, false);
   diagnostic(conflict, "CONSTRAINT_VIOLATION");
@@ -183,4 +183,77 @@ test("the complete generic fixture exposes its canonical head pose and original 
   near(compiled.restPosesByPartId["head-pulley"].position, [0, 0, (5 - 2 * Math.PI * 0.2) / 2]);
   assert.equal(compiled.restGeometry.fragments.find((entry) => entry.partId === "head-pulley").geometry.radius, 0.2);
   assert.equal(compiled.parts.find((entry) => entry.id === "head-pulley").scale[0], 1);
+});
+
+test("significant local offsets cannot disappear during tree composition", () => {
+  for (const [position, rotation] of [
+    [[1e8, 0, 0], [0, 0, 0, 1]],
+    [[0, 1e8, 0], [0, 0, Math.SQRT1_2, Math.SQRT1_2]]
+  ]) for (const offset of [1e-9, -1e-9]) {
+    const raw = rawMachine([part("root", null, pose(position, rotation)), part("child", "root", pose([offset, 0, 0])), part("tip", "child")]);
+    let result;
+    assert.doesNotThrow(() => { result = compileAssembly(normalized(raw), {}); });
+    assert.equal(result.ok, false);
+    assert.equal("value" in result, false);
+    const failure = result.diagnostics.find((entry) => entry.code === "UNSUPPORTED_POSE_PRECISION");
+    assert.equal(failure.path, "/poses/child");
+    assert.equal(failure.partId, "child");
+    assert.deepEqual(failure.sourceIds, ["E0"]);
+  }
+});
+
+test("ordinary rounding, zero and representable offsets remain valid in large and rotated frames", () => {
+  for (const [position, rotation, offset, expected] of [
+    [[0.1, 0, 0], [0, 0, 0, 1], [0.2, 0, 0], [0.30000000000000004, 0, 0]],
+    [[10, 0, 0], [0, 0, 0, 1], [1e-9, 0, 0], [10.000000001, 0, 0]],
+    [[1e8, 0, 0], [0, 0, 0, 1], [0, 0, 0], [1e8, 0, 0]],
+    [[1e8, 0, 0], [0, 0, 0, 1], [0.25, 0, 0], [100000000.25, 0, 0]],
+    [[0, 1e8, 0], [0.5, 0.5, 0.5, 0.5], [0.25, 0, 0], [0, 100000000.25, 0]]
+  ]) {
+    const raw = rawMachine([part("root", null, pose(position, rotation)), part("child", "root", pose(offset))]);
+    const result = resolvePoses(compile(raw));
+    assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+    near(result.value.child.position, expected);
+  }
+});
+
+test("large rotated offsets do not mistake quaternion roundoff for a lost local feature", () => {
+  const raw = rawMachine([part("root", null, pose([1e8, 1e8, 0], [0, 0, Math.SQRT1_2, Math.SQRT1_2])), part("child", "root", pose([1e8, 0, 0]))]);
+  const result = resolvePoses(compile(raw));
+  assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+  near(result.value.child.position, [1e8, 2e8, 0], 1e-7);
+});
+
+test("prismatic motion precision loss returns resolver diagnostics without a partial pose or exception", () => {
+  const raw = rawMachine([part("root", null, pose([1e8, 0, 0])), part("slide", "root")]);
+  raw.frames = [frame("slide-frame", "slide")];
+  raw.joints = [joint("slide-joint", "prismatic", "root", "slide", "slide-frame", pose(), [1, 0, 0])];
+  const compiled = compile(raw);
+  let result;
+  assert.doesNotThrow(() => { result = resolvePoses(compiled, { "slide-joint": 1e-9 }); });
+  assert.equal(result.ok, false);
+  assert.equal("value" in result, false);
+  diagnostic(result, "UNSUPPORTED_POSE_PRECISION");
+  near(resolvePoses(compiled, { "slide-joint": 0.25 }).value.slide.position, [100000000.25, 0, 0]);
+});
+
+test("joint rest composition rejects a swallowed child-frame offset through compile diagnostics", () => {
+  const raw = rawMachine([part("root"), part("child", "root", pose([1e8, 0, 0]))]);
+  raw.frames = [frame("child-frame", "child", pose([1e-9, 0, 0]))];
+  raw.joints = [joint("fixed-joint", "fixed", "root", "child", "child-frame", pose([1e8, 0, 0]))];
+  let result;
+  assert.doesNotThrow(() => { result = compileAssembly(normalized(raw), {}); });
+  assert.equal(result.ok, false);
+  assert.equal("value" in result, false);
+  const failure = result.diagnostics.find((entry) => entry.code === "UNSUPPORTED_POSE_PRECISION");
+  assert.equal(failure.path, "/joints/0");
+  assert.equal(failure.partId, "child");
+});
+
+test("a large representable axis cannot mask precision loss on a different local axis", () => {
+  const raw = rawMachine([part("root", null, pose([0, 1e8, 0])), part("child", "root", pose([1e8, 1e-9, 0]))]);
+  const result = compileAssembly(normalized(raw), {});
+  assert.equal(result.ok, false);
+  assert.equal("value" in result, false);
+  diagnostic(result, "UNSUPPORTED_POSE_PRECISION");
 });

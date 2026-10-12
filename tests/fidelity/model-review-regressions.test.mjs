@@ -73,8 +73,6 @@ for (const event of [null, {}, { id: "invalid" }]) {
 }
 
 test("R5 published event order keeps causal order on exact timestamp ties, so the ledger audit accepts the published log", () => {
-  // One bucket: the feed that fills it and the discharge that empties it share a timestamp in the tenth step.
-  // Ordering ties by the textual event ID put "transfer:10" before "transfer:9" and the discharge before its credit.
   const spec = beltSpec((raw) => {
     const p = raw.parameters.beltBucket;
     p.bucketCount.value = 1; p.bucketPitch.value = 5; p.beltLength.value = 5; p.feedRate.value = 0.125;

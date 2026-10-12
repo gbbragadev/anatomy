@@ -136,7 +136,8 @@ export function compileAssembly(spec, assets = {}) {
   compiled.constraintResiduals = coordinates.residuals;
   for (const joint of compiled.joints) {
     const child = maps.parts.get(joint.child);
-    const relative = composePose(composePose(joint.parentFrame, jointMotion(joint, coordinates.value[joint.id])), inversePose(maps.frames.get(joint.childFrame).pose));
+    const precisionLoss = (axis) => fail("UNSUPPORTED_POSE_PRECISION", sourcePaths.joints[joint.id], `Joint rest composition cannot retain the local offset on axis ${axis} at numerical alignment precision.`, { ...joint, partId: child.id });
+    const relative = composePose(composePose(joint.parentFrame, jointMotion(joint, coordinates.value[joint.id]), precisionLoss), inversePose(maps.frames.get(joint.childFrame).pose), precisionLoss);
     const residual = poseResidual(relative, child.localRest);
     if (!validPose(relative) || !Number.isFinite(residual.position_m) || !Number.isFinite(residual.angle_rad) || residual.position_m > 1e-12 || residual.angle_rad > 1e-12) fail("JOINT_REST_MISMATCH", sourcePaths.joints[joint.id], `Declared localRest differs from the canonical default joint equation by ${residual.position_m} m and ${residual.angle_rad} rad.`, { ...joint, partId: child.id });
   }

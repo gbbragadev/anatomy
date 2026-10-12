@@ -1,11 +1,15 @@
 function lineEnds({ select = null, tolerance = 1, root: rootSlack = 2, mark = 7, least = 0.3, cover = 0.5, show = false } = {}) {
-  const plate = (select && document.querySelector(select)) || document.querySelector(".iso-plate") || document.body;
+  const selected = select ? document.querySelector(select) : null;
+  if (select && !selected) throw new Error(`Line-end selector did not match an element: ${select}`);
+  const plate = selected || document.querySelector(".iso-plate") || document.body;
+  const svgs = [...(plate.matches("svg") ? [plate] : []), ...plate.querySelectorAll("svg")];
+  if (select && !svgs.length) throw new Error(`Line-end selector has no SVG to audit: ${select}`);
   const box = plate.getBoundingClientRect();
   const style = document.createElement("style");
-  style.textContent = `${select || ".iso-plate"} *{pointer-events:none!important}${select || ".iso-plate"} svg,${select || ".iso-plate"} svg *{pointer-events:visiblePainted!important}`;
+  const scope = select || ".iso-plate";
+  style.textContent = `${scope} *{pointer-events:none!important}${scope}:is(svg),${scope}:is(svg) *,${scope} svg,${scope} svg *{pointer-events:visiblePainted!important}`;
   document.head.append(style);
   const skipClass = ["iso-edge", "iso-bevel", "iso-crease", "tb-edge"];
-  const svgs = [...(plate.matches("svg") ? [plate] : []), ...plate.querySelectorAll("svg")];
   const shapes = svgs.flatMap((svg) => [...svg.querySelectorAll("path, line, polyline, polygon, circle, ellipse, rect")]).filter((el) => !el.closest("defs, clipPath, mask, pattern, marker, symbol"));
   const opacityOf = (el) => {
     let alpha = 1;

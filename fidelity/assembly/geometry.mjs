@@ -50,7 +50,7 @@ export function compileGeometry(geometry, part, role, diagnostics, sourcePath) {
         ids.add(component.id);
         if (!validPose(component.pose)) { fail("INVALID_POSE", `${componentPath}/pose`, "Compound poses must be canonical finite unit-quaternion poses."); continue; }
         const scaledPose = { position: component.pose.position.map((value) => value * scale), rotation_xyzw: [...component.pose.rotation_xyzw] };
-        const nextPose = composePose(localPose, scaledPose);
+        const nextPose = composePose(localPose, scaledPose, (axis) => fail("UNSUPPORTED_POSE_PRECISION", `${componentPath}/pose`, `Compound composition cannot retain the local offset on axis ${axis} at numerical alignment precision.`));
         if (!validPose(nextPose)) { fail("NONFINITE_GEOMETRY", `${componentPath}/pose`, "Scaled compound placement is not finite."); continue; }
         flatten(component.geometry, nextPose, [...componentIds, component.id], `${componentPath}/geometry`);
       }
@@ -126,7 +126,7 @@ export function evaluateGeometry(compiled, poses) {
   for (const part of compiled.parts) if (!Object.hasOwn(poses, part.id) || !validPose(poses[part.id])) diagnostics.push(diagnostic("INVALID_POSE", `/poses/${pointer(part.id)}`, "Each physical part requires a finite world pose with a unit xyzw quaternion.", { ...part, partId: part.id }));
   if (hasErrors(diagnostics)) return failed();
   const worldFragments = (fragments, role) => fragments.map((fragment, index) => {
-    const pose = composePose(poses[fragment.partId], fragment.localPose);
+    const pose = composePose(poses[fragment.partId], fragment.localPose, (axis) => diagnostics.push(diagnostic("UNSUPPORTED_POSE_PRECISION", `/${role}/${index}/pose`, `World geometry composition cannot retain the local offset on axis ${axis} at numerical alignment precision.`, fragment)));
     const bounds = fragmentBounds(fragment.geometry, pose);
     if (!validPose(pose) || !finiteBounds(bounds)) diagnostics.push(diagnostic("NONFINITE_GEOMETRY", `/${role}/${index}`, "World geometry or bounds overflowed; no partial geometry snapshot is returned.", fragment));
     else if (bounds.min.some((value, axis) => value >= bounds.max[axis])) diagnostics.push(diagnostic("UNSUPPORTED_GEOMETRY_PRECISION", `/${role}/${index}/bounds`, "A positive-volume primitive collapsed in its world bounds at numeric precision; no partial geometry snapshot is returned.", fragment));

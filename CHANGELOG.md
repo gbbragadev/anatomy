@@ -16,9 +16,10 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - `examples/arcade-cabinet/`, an upright arcade cabinet with its side panel off. A quarter rolls down the coin chute past the coin-switch wire into the cash box, the switch's pulse runs along its cable to the board, and the CRT warms up, self-tests and runs an attract mode drawn in the plane of the tilted monitor; the stick closes a microswitch under the panel. It draws in the light and dark themes and passes `--audit`.
 - `examples/spot-plate/`, a second React figure from the same site as `test-rig`: six pairs of glass drops that run together into one piece of glass as a fan of feeler blades sets `merge`. It draws in the light and dark themes.
 - A first workflow step, **Size it before you start**: every request is sized as a Figure (about 30–90 minutes), a Hero (2–4 hours) or an Epic (6 hours or more), and the estimate is told to the user first. An Epic is not started until the user chooses it over a proposed Hero version. Every size has a working page within the first hour, and Claude reports when a step runs past twice its share of the estimate.
-- `tests/upstream/generate-baseline.mjs` regenerates the legacy byte and export baseline from `git archive` of a named 40-hex upstream commit, never from the working tree, and has no default output path. `tests/upstream/legacy-builds.mjs` holds the build list the generator and the legacy test share.
+- `tests/upstream/generate-baseline.mjs` regenerates the legacy byte and export baseline from `git archive` of a reviewed 40-hex upstream commit and has no default output path. The legacy test uses `legacy-builds.mjs`; the generator reads coverage from the approved immutable reference blob.
 - `references/equipment-demo.md`, the workflow for a live technical demo of a machine: choose the stack, write a contract with one owner per file, keep the model pure, falsify the written numbers with a clearance sweep and log each change, label the demo as simulated, and prove it in a real browser with suites that fail on any external request or console error. Taken from two demos built with the skill.
 - `references/glow.md`: the thumbnail test for a lit state, a starter plus an assembler script for short jobs, how a travelling pulse works in `examples/arcade-cabinet/live.js`, and cleaning a user's own mesh. Habits borrowed from iso-glow (MIT, April Zhu; built on iso-figure, MIT, Tolga Cohce); no code is copied.
+- CI now installs the isolated fidelity package and runs its contract, assembly, deterministic-model and legacy regression tests alongside the existing script/example gates. Local results and remote macOS/Node 22 results remain separate evidence.
 
 ### Fixed
 
@@ -54,6 +55,10 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - The legacy regression test compared HTML paths with the platform separator and failed on Windows before it compared any bytes. Paths now use `/` on every platform.
 - Belt model events that share a timestamp and a bucket are published in the order they were applied. Ties were ordered by the textual event ID, which put `transfer:10` before `transfer:9`, so the ledger audit rejected the log the model had just published.
 - Visible text in assertion mode can no longer be released from a claim that passes only at hypothesis level F0. Such a claim supports illustrative text with its label, not a factual assertion.
+- A selected SVG now preserves opaque-fill occlusion for line endpoints, and a selector that matches nothing fails instead of auditing unrelated clean content.
+- Native fidelity checks require continuous coverage of expected contour segments after excluding only declared cuts. Missing cut-part edges no longer pass or remove the round-band comparison; missing uncut edges fail normally rather than throwing a path-access exception.
+- Unit conversion rejects nonzero value, uncertainty and acceptance fields that underflow to canonical zero. Assembly composition rejects local offsets lost at a large world base with controlled `UNSUPPORTED_POSE_PRECISION` diagnostics, preserving the existing numerical tolerances.
+- The baseline generator accepts only explicitly approved upstream commits and reads its build/page coverage from the immutable published reference blob, not a mutable local helper. Existing atomic writes, temporary cleanup, replacement-object protection and environment isolation remain.
 
 ### Changed
 
@@ -61,6 +66,8 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - The 4× detail sweep scales with the size: the subject and mechanism for a Figure, the whole drawing for a Hero or an Epic. The density rule itself still holds for every figure.
 - The legacy regression baseline is pinned to upstream `240a9bf` instead of `dbf697a`, so its byte-identity guarantee covers the upstream regression fixes this fork now contains.
 - The README now says this is a fork and its install and download commands fetch this fork. The website, the CI badge and the issue forms still point at the original project.
+- The baseline itself remains pinned to `240a9bf`, unchanged. The original `dbf697a` plan is explicitly labeled historical. Later audit corrections intentionally diverge only in checker code, not kit builders, example bytes or baseline expectations.
+- Removed three source-wording routing checks. They asserted documentation strings rather than consumer behavior; context/skill access is checked by real consuming sessions instead. The package keeps the contract, model, assembly, generator and byte-identity tests.
 
 ## 2026-10-08
 

@@ -393,3 +393,60 @@ test("R6 assertion mode cannot release a factual statement backed only by a pass
   Object.assign(spec.visibleText[0], { mode: "illustrative", text: "Illustrative head radius is 0.20 m." });
   assert.equal(auditVisibleText(spec, [green])[0].verdict, "passed");
 });
+
+for (const field of ["value", "uncertainty", "manufacturingTolerance", "proposedTolerance", "numericAcceptance"]) {
+  test(`N3 nonzero ${field} cannot underflow to canonical zero`, () => {
+    const quantity = { ...structuredClone(fixture.parameters.beltBucket.headRadius), value: null, unit: "mm", [field]: Number.MIN_VALUE };
+    const before = structuredClone(quantity);
+    const result = normalizeQuantity(quantity, "length");
+    assert.equal(result.ok, false);
+    assert.equal("value" in result, false);
+    has(result.diagnostics, "QUANTITY_UNDERFLOW", `/${field}`);
+    assert.deepEqual(quantity, before);
+  });
+}
+
+test("N3 negative nonzero values cannot underflow to canonical negative zero", () => {
+  const result = normalizeQuantity({ ...structuredClone(fixture.parameters.beltBucket.headRadius), value: -Number.MIN_VALUE, unit: "mm" }, "length");
+  assert.equal(result.ok, false);
+  assert.equal("value" in result, false);
+  has(result.diagnostics, "QUANTITY_UNDERFLOW", "/value");
+});
+
+test("N3 null, zero and representable subnormal quantity fields remain supported", () => {
+  for (const value of [null, 0, Number.MIN_VALUE]) {
+    const quantity = { value, unit: "m", sourceIds: ["E0"], uncertainty: value, manufacturingTolerance: value, proposedTolerance: value, numericAcceptance: value };
+    const result = normalizeQuantity(quantity, "length");
+    assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+    for (const field of ["value", "uncertainty", "manufacturingTolerance", "proposedTolerance", "numericAcceptance"]) assert.equal(result.value[field], value);
+    assert.deepEqual(result.value.original, quantity);
+  }
+  for (const value of [null, 0]) {
+    const result = normalizeQuantity({ value, unit: "mm", sourceIds: ["E0"], uncertainty: value, manufacturingTolerance: value, proposedTolerance: value, numericAcceptance: value }, "length");
+    assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+    for (const field of ["value", "uncertainty", "manufacturingTolerance", "proposedTolerance", "numericAcceptance"]) assert.equal(result.value[field], value);
+  }
+});
+
+test("N3 ordinary unit rounding and nonzero subnormal conversions remain supported", () => {
+  for (const [value, expected] of [[200, 0.2], [-200, -0.2], [0.1, 0.0001], [Number.MIN_VALUE * 1024, Number.MIN_VALUE]]) {
+    const result = normalizeQuantity({ value, unit: "mm", sourceIds: ["E0"], uncertainty: 0.5, manufacturingTolerance: 2, proposedTolerance: 1, numericAcceptance: 0.001 }, "length");
+    assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+    assert.equal(result.value.value, expected);
+    assert.equal(result.value.uncertainty, 0.0005);
+    assert.equal(result.value.manufacturingTolerance, 0.002);
+    assert.equal(result.value.proposedTolerance, 0.001);
+    assert.equal(result.value.numericAcceptance, 0.000001);
+  }
+});
+
+test("N3 machine quantity underflow keeps the exact field path and source evidence", () => {
+  const spec = copy();
+  Object.assign(spec.parameters.beltBucket.headRadius, { unit: "mm", uncertainty: Number.MIN_VALUE });
+  const result = validateMachine(spec);
+  assert.equal(result.ok, false);
+  assert.equal("value" in result, false);
+  const failure = result.diagnostics.find((entry) => entry.code === "QUANTITY_UNDERFLOW");
+  assert.equal(failure.path, "/parameters/beltBucket/headRadius/uncertainty");
+  assert.deepEqual(failure.sourceIds, ["E0"]);
+});

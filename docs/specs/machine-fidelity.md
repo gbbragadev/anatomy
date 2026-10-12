@@ -48,6 +48,8 @@ turn-build serializa grupos turn, hinge, slide e free, mas ranges são metadados
 ### O que a inspeção não autoriza afirmar
 A CI observada reconstrói HTML e verifica diferenças; não executa toda a suíte geométrica, browser e de desempenho. A presença de auditorias não demonstra validação de qualquer máquina industrial. Casos de avaliação descritos em prosa não equivalem a um ensaio automatizado de fidelidade construtiva e dinâmica. Esta revisão é baseada em leitura do código e das fontes; não apresenta resultados novos de benchmark, execução de CI ou comparação com máquina real. [U4–U5]
 
+Atualização de integração (2026-10-12): a rodada local de correções acrescenta ao workflow o pacote isolado de contratos/modelo/montagem e o teste de identidade do legado. Essa alteração de configuração ainda precisa de um run remoto no macOS/Node 22; o baseline `240a9bf` foi registrado em Windows/Node 24.14. Testes numéricos e identidade de HTML não substituem a demonstração browser faithful, auditoria de máquina real ou benchmarks de dispositivo.
+
 # Arquitetura e fluxo de dados
 ### Separação de responsabilidades
 O pacote genérico é dividido em contrato, compilação de montagem, execução do modelo, adaptadores de apresentação e avaliação. Um pacote de domínio acrescenta vocabulário, equações limitadas ao domínio, regras de montagem, fixtures e exemplos. A cena guarda apenas configuração, referências e assets próprios. Essa divisão evita que cada equipamento reinvente o relógio, os IDs, a conservação de massa e o relatório de evidência.

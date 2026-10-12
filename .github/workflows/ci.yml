@@ -27,6 +27,10 @@ jobs:
 
       - name: Regression tests
         run: node --test scripts/*.test.mjs
+      - name: Install isolated fidelity dependencies
+        run: npm --prefix fidelity ci
+      - name: Fidelity and legacy regression tests
+        run: npm --prefix fidelity test
       - name: Dial indicator
         run: |
           node examples/dial-indicator/build.mjs

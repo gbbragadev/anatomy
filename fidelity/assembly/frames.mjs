@@ -21,9 +21,21 @@ export const rotateVector = (rotation, vector) => {
     2 * (x * z - y * w) * a + 2 * (y * z + x * w) * b + (1 - 2 * (x * x + y * y)) * c
   ];
 };
-export const composePose = (parent, local) => {
+export const composePose = (parent, local, onPrecisionLoss) => {
   const offset = rotateVector(parent.rotation_xyzw, local.position);
-  return { position: offset.map((value, index) => value + parent.position[index]), rotation_xyzw: multiplyQuaternion(parent.rotation_xyzw, local.rotation_xyzw) };
+  const position = offset.map((value, index) => value + parent.position[index]);
+  if (onPrecisionLoss && offset.some((value, index) => Math.abs(position[index] - parent.position[index] - value) > 1e-12)) {
+    const [x, y, z, w] = parent.rotation_xyzw.map(Math.abs);
+    const [a, b, c] = local.position.map((value) => Math.abs(value) * (8 * Number.EPSILON));
+    const roundoff = [
+      (1 + 2 * (y * y + z * z)) * a + 2 * (x * y + z * w) * b + 2 * (x * z + y * w) * c,
+      2 * (x * y + z * w) * a + (1 + 2 * (x * x + z * z)) * b + 2 * (y * z + x * w) * c,
+      2 * (x * z + y * w) * a + 2 * (y * z + x * w) * b + (1 + 2 * (x * x + y * y)) * c
+    ];
+    const axis = offset.findIndex((value, index) => Math.abs(position[index] - parent.position[index] - value) > Math.max(1e-12, roundoff[index]));
+    if (axis !== -1) onPrecisionLoss(axis);
+  }
+  return { position, rotation_xyzw: multiplyQuaternion(parent.rotation_xyzw, local.rotation_xyzw) };
 };
 export const inversePose = (pose) => {
   const rotation_xyzw = [-pose.rotation_xyzw[0], -pose.rotation_xyzw[1], -pose.rotation_xyzw[2], pose.rotation_xyzw[3]];

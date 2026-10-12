@@ -1,28 +1,17 @@
 #!/usr/bin/env node
-// Regenerates the pinned legacy baseline read by tests/upstream/legacy.test.mjs.
-//
-//   node tests/upstream/generate-baseline.mjs --commit <40-hex upstream commit> --out <baseline.json>
-//
-// Re-pinning is a deliberate act, never a way to turn a red test green:
-// - the legacy source (kit, scripts, examples) comes only from `git archive` of the named commit, never from the working tree;
-//   the build list and the HTML path rule come from ./legacy-builds.mjs, which the legacy test also uses and pins through baseline.builds;
-// - the commit must be a full 40-hex id that resolves to a commit with replacement objects disabled, so a branch name,
-//   an abbreviation or a replace ref cannot move the pin;
-// - archive bytes do not depend on the local tar.umask, the archive must hold exactly the commit's files, and the
-//   builds do not inherit NODE_* variables such as NODE_OPTIONS;
-// - the output is written beside its target and renamed, so a failed write cannot truncate an existing baseline;
-// - there is no default output path.
-// The legacy test then proves the committed HTML and a fresh rebuild still match this baseline.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
-import { BUILDS, htmlFiles } from "./legacy-builds.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const POLICY = fileURLToPath(new URL("./upstream-policy.json", import.meta.url));
+const FULL_COMMIT = /^[0-9a-f]{40}$/;
+const PATH_PART = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
+const BUILD_FLAG = /^--[a-z][a-z-]*$/;
 
 class GeneratorError extends Error {}
 
@@ -42,18 +31,84 @@ function run(command, args, options = {}) {
   return result.stdout.trim();
 }
 
+const git = (...args) => run("git", ["--no-replace-objects", ...args], { cwd: ROOT });
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+const isCommit = (value) => typeof value === "string" && FULL_COMMIT.test(value);
+const isRepositoryPath = (value) => typeof value === "string" && value.split("/").every((part) => PATH_PART.test(part));
+const isExampleScript = (value) => isRepositoryPath(value) && /^examples\/[^/]+\/[^/]+\.mjs$/.test(value);
+const isExamplePage = (value) => isRepositoryPath(value) && /^examples\/[^/]+\/.+\.html$/.test(value);
+const isBuild = (args) => Array.isArray(args) && isExampleScript(args[0]) && args.slice(1).every((arg) => typeof arg === "string" && BUILD_FLAG.test(arg));
+
+function readPolicy() {
+  let policy;
+  try {
+    policy = JSON.parse(readFileSync(POLICY, "utf8"));
+  } catch (error) {
+    fail(`cannot read the upstream policy ${POLICY}: ${error.message}`);
+  }
+  const upstreams = policy?.upstreams;
+  const coverage = policy?.coverage;
+  if (!Array.isArray(upstreams) || upstreams.length === 0 || !upstreams.every(isCommit) || new Set(upstreams).size !== upstreams.length) fail(`${POLICY} must list distinct full 40-hex upstream commits`);
+  if (!isCommit(coverage?.commit) || !isRepositoryPath(coverage?.path)) fail(`${POLICY} must name the full 40-hex commit and the repository path of the immutable coverage manifest`);
+  return { upstreams, coverage };
+}
+
+function readCoverage(source) {
+  if (git("rev-parse", "--verify", `${source.commit}^{commit}`) !== source.commit) fail(`${source.commit} is not a commit in this repository; fetch the commit that holds the trusted coverage manifest`);
+  const text = git("cat-file", "blob", `${source.commit}:${source.path}`);
+  let manifest;
+  try {
+    manifest = JSON.parse(text);
+  } catch (error) {
+    fail(`${source.path} at ${source.commit} is not valid JSON: ${error.message}`);
+  }
+  const builds = manifest?.builds;
+  const html = manifest?.html;
+  if (!Array.isArray(builds) || builds.length === 0 || !builds.every(isBuild)) fail(`${source.path} at ${source.commit} must list the example build commands`);
+  if (typeof html !== "object" || html === null || Array.isArray(html)) fail(`${source.path} at ${source.commit} must map the legacy example HTML pages`);
+  const pages = Object.keys(html).sort();
+  if (pages.length === 0 || !pages.every(isExamplePage)) fail(`${source.path} at ${source.commit} must list only legacy example HTML pages`);
+  return { builds, pages, examples: [...new Set(pages.map((page) => page.split("/")[1]))] };
+}
+
+function legacyHtml(root, examples) {
+  const found = [];
+  const walk = (directory) => {
+    if (!existsSync(directory)) return;
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.name.endsWith(".html")) found.push(relative(root, path).split(sep).join("/"));
+    }
+  };
+  for (const name of examples) walk(join(root, "examples", name));
+  return found.sort();
+}
+
+function treeFiles(commit) {
+  return git("ls-tree", "-r", "-z", commit).split("\0").filter(Boolean).map((record) => {
+    const separator = record.indexOf("\t");
+    return { id: record.slice(0, separator).split(" ")[2], path: record.slice(separator + 1) };
+  }).sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+}
+
+function extractedIds(root, paths) {
+  const input = `${paths.map((path) => join(root, path)).join("\n")}\n`;
+  return run("git", ["--no-replace-objects", "hash-object", "--no-filters", "--stdin-paths"], { cwd: ROOT, input }).split(/\r?\n/);
+}
 
 let temporary;
 let partial;
 try {
   const commit = option("--commit");
   const out = option("--out");
-  if (!commit || !/^[0-9a-f]{40}$/.test(commit)) fail("--commit must be a full 40-hex commit id");
+  if (!isCommit(commit)) fail("--commit must be a full 40-hex commit id");
   if (!out) fail("--out is required; pass tests/upstream/baseline.json explicitly to replace the pinned baseline");
-  const git = (...args) => run("git", ["--no-replace-objects", ...args], { cwd: ROOT });
+  const policy = readPolicy();
+  if (!policy.upstreams.includes(commit)) fail(`${commit} is not an approved upstream commit (approved: ${policy.upstreams.join(", ")}); a fork commit or a local ref cannot authenticate the origin`);
   if (git("rev-parse", "--verify", `${commit}^{commit}`) !== commit) fail(`${commit} is not a commit in this repository; fetch the upstream first`);
   const tree = git("rev-parse", `${commit}^{tree}`);
+  const coverage = readCoverage(policy.coverage);
 
   temporary = mkdtempSync(join(tmpdir(), "anatomy-baseline-"));
   const tarPath = join(temporary, "source.tar");
@@ -62,23 +117,25 @@ try {
   const pristine = join(temporary, "pristine");
   mkdirSync(pristine);
   run("tar", ["-xf", tarPath, "-C", pristine]);
-  // A local $GIT_DIR/info/attributes can make `git archive` drop files (export-ignore). The archive must hold exactly the commit's files.
-  const listed = git("ls-tree", "-r", "-z", "--name-only", commit).split("\0").filter(Boolean).sort();
+  const listed = treeFiles(commit);
   const extracted = readdirSync(pristine, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name).slice(pristine.length + 1).split(sep).join("/")).sort();
-  if (JSON.stringify(listed) !== JSON.stringify(extracted)) fail(`git archive of ${commit} does not hold exactly the files of the commit (${extracted.length} extracted, ${listed.length} listed)`);
+  if (JSON.stringify(listed.map((file) => file.path)) !== JSON.stringify(extracted)) fail(`git archive of ${commit} does not hold exactly the files of the commit (${extracted.length} extracted, ${listed.length} listed)`);
+  const extractedHashes = extractedIds(pristine, extracted);
+  const altered = listed.filter((file, index) => extractedHashes[index] !== file.id).map((file) => file.path);
+  if (extractedHashes.length !== listed.length || altered.length) fail(`git archive of ${commit} changed the bytes of ${altered.length} of its ${listed.length} files (an export-subst, ident, eol or filter attribute); first: ${altered.slice(0, 5).join(", ")}`);
 
-  // Same disposable workspace shape as the test: only kit, scripts and examples, with every legacy HTML removed before rebuilding.
   const workspace = join(temporary, "source");
   for (const directory of ["kit", "scripts", "examples"]) cpSync(join(pristine, directory), join(workspace, directory), { recursive: true });
-  const committedPaths = htmlFiles(pristine);
+  const committedPaths = legacyHtml(pristine, coverage.examples);
+  if (JSON.stringify(committedPaths) !== JSON.stringify(coverage.pages)) fail(`the legacy HTML set of ${commit} differs from the trusted coverage:\n${committedPaths.join("\n")}\n--- trusted ---\n${coverage.pages.join("\n")}`);
   const committed = new Map(committedPaths.map((path) => [path, readFileSync(join(pristine, path))]));
-  for (const path of htmlFiles(workspace)) rmSync(join(workspace, path));
+  for (const path of legacyHtml(workspace, coverage.examples)) rmSync(join(workspace, path));
   const environment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("NODE_")));
-  for (const args of BUILDS) {
+  for (const args of coverage.builds) {
     const result = spawnSync(process.execPath, args, { cwd: workspace, env: environment, encoding: "utf8", timeout: 300_000, maxBuffer: 8 * 1024 * 1024 });
     if (result.error || result.status !== 0 || result.signal) fail(`${args.join(" ")} failed (status ${result.status}, signal ${result.signal})\n${result.error ?? ""}\n${result.stdout}${result.stderr}`);
   }
-  const generatedPaths = htmlFiles(workspace);
+  const generatedPaths = legacyHtml(workspace, coverage.examples);
   if (JSON.stringify(generatedPaths) !== JSON.stringify(committedPaths)) fail(`rebuild emitted a different HTML set than the commit contains:\n${generatedPaths.join("\n")}\n--- committed ---\n${committedPaths.join("\n")}`);
 
   const html = {};
@@ -112,7 +169,7 @@ try {
       committedHtmlMatchesGenerated: Object.values(html).every((entry) => entry.committedMatchesGenerated),
     },
     encoding: "gzip-base64",
-    builds: BUILDS,
+    builds: coverage.builds,
     html,
     exports,
   };

@@ -12,12 +12,13 @@ export function resolvePoses(compiled, input = {}) {
   const poses = new Map();
   for (const transform of compiled.transformParents) {
     const part = parts.get(transform.partId);
+    const precisionLoss = (axis) => diagnostics.push(diagnostic("UNSUPPORTED_POSE_PRECISION", `/poses/${pointer(part.id)}`, `World composition cannot retain the local offset on axis ${axis} at numerical alignment precision.`, { ...part, partId: part.id }));
     let pose;
     if (transform.parentId === null) pose = cleanPose(part.localRest);
-    else if (transform.jointId === null) pose = composePose(poses.get(transform.parentId), part.localRest);
+    else if (transform.jointId === null) pose = composePose(poses.get(transform.parentId), part.localRest, precisionLoss);
     else {
       const joint = joints.get(transform.jointId);
-      pose = composePose(composePose(composePose(poses.get(transform.parentId), joint.parentFrame), jointMotion(joint, coordinates.value[joint.id])), inversePose(frames.get(joint.childFrame).pose));
+      pose = composePose(composePose(composePose(poses.get(transform.parentId), joint.parentFrame, precisionLoss), jointMotion(joint, coordinates.value[joint.id]), precisionLoss), inversePose(frames.get(joint.childFrame).pose), precisionLoss);
     }
     if (!validPose(pose)) diagnostics.push(diagnostic("NONFINITE_POSE", `/poses/${pointer(part.id)}`, "Joint/tree composition must produce finite canonical world poses.", { ...part, partId: part.id }));
     poses.set(part.id, pose);

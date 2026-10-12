@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test ../tests/upstream/*.test.mjs ../tests/fidelity/*.test.mjs tests/*.test.mjs"
+    "test": "node --test ../tests/upstream/*.test.mjs ../tests/fidelity/*.test.mjs"
   },
   "dependencies": {
     "ajv": "8.20.0"

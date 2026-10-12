@@ -79,6 +79,8 @@ npm --prefix fidelity ci
 npm --prefix fidelity test
 ```
 
+The fork's CI workflow also installs this isolated package and runs its fidelity and legacy checks. A green numerical suite does not establish a faithful renderer, real-machine accuracy or safety. Remote macOS/Node 22 execution of a new candidate must be reported separately from local Windows results; do not replace the recorded baseline to conceal platform drift.
+
 The faithful workflow starts by identifying sources, evidence gaps and the supported scope. Offline high-quality rendering, native STEP/CAD conversion, DEM/FEA, generic constraint solvers, calibrated discharge and WebGPU remain deferred. See the [implementation plan](docs/superpowers/plans/2026-10-11-machine-fidelity.md) for subsequent tasks and their release gates.
 
 ## Gallery

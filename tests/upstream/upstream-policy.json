@@ -1,0 +1,10 @@
+{
+  "upstreams": [
+    "dbf697a527bbf7d358668e1557cb1e35ff725d46",
+    "240a9bf7c50cc6226148762a1017466fcbc08523"
+  ],
+  "coverage": {
+    "commit": "15cd4fcfde78298f6de17c619d466aad56dea0f9",
+    "path": "tests/upstream/baseline.json"
+  }
+}

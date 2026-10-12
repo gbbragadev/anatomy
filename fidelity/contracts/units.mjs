@@ -40,6 +40,9 @@ export function normalizeQuantity(quantity, dimension) {
   value.unit = info[2];
   value.value = quantity.value === null ? null : quantity.value * info[1];
   for (const key of ["uncertainty", "manufacturingTolerance", "proposedTolerance", "numericAcceptance"]) if (typeof value[key] === "number") value[key] *= Math.abs(info[1]);
+  for (const key of ["value", "uncertainty", "manufacturingTolerance", "proposedTolerance", "numericAcceptance"]) {
+    if (typeof quantity[key] === "number" && quantity[key] !== 0 && value[key] === 0) error("QUANTITY_UNDERFLOW", `/${key}`, "A nonzero quantity field cannot become zero during canonical unit conversion.");
+  }
   inspectPlainData(value, "", diagnostics);
   if (diagnostics.length) return { ok: false, diagnostics };
   return { ok: true, value, diagnostics };

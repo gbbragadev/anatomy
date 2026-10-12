@@ -10,6 +10,135 @@ const rootOf = (group) => {
 };
 const restValues = (T, theta) => Object.fromEntries(T.groups.map((g) => [g.name, g.kind === "turn" && !g.parent ? theta : g.kind === "free" ? null : 0]));
 
+const edgeSegments = (d) => {
+  const segments = [];
+  for (const [, body] of (d ?? "").matchAll(/M([^M]*)/g)) {
+    const values = (body.match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/g) ?? []).map(Number);
+    const points = [];
+    for (let i = 0; i + 1 < values.length; i += 2) points.push([values[i], values[i + 1]]);
+    for (let i = 1; i < points.length; i++) segments.push([points[i - 1], points[i]]);
+    if (/Z\s*$/.test(body) && points.length > 1) segments.push([points[points.length - 1], points[0]]);
+  }
+  return segments;
+};
+
+const coversEdges = (expected, observed, limit) => expected.every(([a, b]) => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const length2 = dx * dx + dy * dy;
+  if (!length2) return true;
+  const intervals = [];
+  const add = (from, to) => {
+    from = Math.max(0, from);
+    to = Math.min(1, to);
+    if (from <= to) intervals.push([from, to]);
+  };
+  const disc = (p) => {
+    const px = p[0] - a[0];
+    const py = p[1] - a[1];
+    const cross = dx * py - dy * px;
+    const margin = limit * limit - cross * cross / length2;
+    if (margin < 0) return;
+    const centre = (px * dx + py * dy) / length2;
+    const radius = Math.sqrt(margin / length2);
+    add(centre - radius, centre + radius);
+  };
+  for (const [c, d] of observed) {
+    disc(c);
+    disc(d);
+    const ux = d[0] - c[0];
+    const uy = d[1] - c[1];
+    const length = Math.hypot(ux, uy);
+    if (!length) continue;
+    let from = 0;
+    let to = 1;
+    const clip = (start, rate, low, high) => {
+      if (!rate) {
+        if (start < low || start > high) to = -1;
+        return;
+      }
+      const t0 = (low - start) / rate;
+      const t1 = (high - start) / rate;
+      from = Math.max(from, Math.min(t0, t1));
+      to = Math.min(to, Math.max(t0, t1));
+    };
+    const px = a[0] - c[0];
+    const py = a[1] - c[1];
+    clip((px * ux + py * uy) / length, (dx * ux + dy * uy) / length, 0, length);
+    clip((ux * py - uy * px) / length, (ux * dy - uy * dx) / length, -limit, limit);
+    add(from, to);
+  }
+  intervals.sort((a, b) => a[0] - b[0]);
+  let reached = 0;
+  for (const [from, to] of intervals) {
+    if (from > reached + 1e-12) return false;
+    reached = Math.max(reached, to);
+    if (reached >= 1 - 1e-12) return true;
+  }
+  return false;
+});
+
+const prismGeometry = (spec, origin) => ({
+  F: spec.up ? { o: origin, a: [0, 0, 1], u: [1, 0, 0], v: [0, 1, 0] } : { ...spec.F, o: G.add3(spec.F.o, origin) },
+  ring: Array.from({ length: spec.ring.length / 2 }, (_, i) => spec.ring.slice(2 * i, 2 * i + 2)),
+  s0: spec.up ? spec.z0 : spec.s0,
+  s1: spec.up ? spec.z1 : spec.s1,
+  origin,
+  cuts: spec.cuts ?? [],
+});
+
+const prismMatchesWorld = (world, spec, origin) => {
+  if (spec.ring.length !== 2 * world.ring.length) return false;
+  const packed = (value) => Math.round(value * 1000) / 1000;
+  const F = {
+    o: G.sub3(world.F.o, origin).map(packed),
+    a: world.F.a.map(packed),
+    u: world.F.u.map(packed),
+    v: world.F.v.map(packed),
+  };
+  for (const end of ["s0", "s1"]) {
+    const s = packed(world[end]);
+    for (let i = 0; i < world.ring.length; i++) {
+      const x = packed(world.ring[i][0]);
+      const y = packed(world.ring[i][1]);
+      for (let c = 0; c < 3; c++) {
+        const expected = F.o[c] + F.a[c] * s + F.u[c] * x + F.v[c] * y;
+        const observed = spec.F.o[c] + spec.F.a[c] * spec[end] + spec.F.u[c] * spec.ring[2 * i] + spec.F.v[c] * spec.ring[2 * i + 1];
+        if (!(Math.abs(expected - observed) <= 0.001)) return false;
+      }
+    }
+  }
+  return true;
+};
+
+const prismEdges = ({ F, ring, s0, s1, origin, cuts }, P, shift) => {
+  const view = G.viewOf(P);
+  const [low, high] = [s0, s1].map((s) => ring.map(([x, y]) => {
+    const world = F.o.map((o, i) => o + F.a[i] * s + F.u[i] * x + F.v[i] * y);
+    const local = G.sub3(world, origin);
+    const point = k.iso(world, P).map((v, i) => v + shift[i]);
+    point.cuts = cuts.flatMap((cut, i) => Math.abs(G.dot3(cut.n, local) - cut.d) < 1e-3 ? [i] : []);
+    return point;
+  }));
+  const facing = ring.map(([x, y], i) => {
+    const [nextX, nextY] = ring[(i + 1) % ring.length];
+    const dx = nextX - x;
+    const dy = nextY - y;
+    const length = Math.hypot(dx, dy) || 1;
+    const normal = G.add3(G.mul3(F.u, dy / length), G.mul3(F.v, -dx / length));
+    return G.dot3(normal, view) > 1e-9;
+  });
+  const near = G.dot3(F.a, view) >= 0 ? high : low;
+  const far = near === high ? low : high;
+  const segments = [];
+  for (let i = 0; i < ring.length; i++) {
+    const end = facing[i] ? far : near;
+    segments.push([end[i], end[(i + 1) % ring.length]]);
+    if (facing[i] !== facing[(i + ring.length - 1) % ring.length]) segments.push([low[i], high[i]]);
+  }
+  return segments.filter(([a, b]) => !a.cuts.some((cut) => b.cuts.includes(cut)));
+};
+
 export function identity(T, P, angles, { plant = null } = {}) {
   const scene = TURN.prepare(T.data, { unit: 1 });
 const subpaths = (d) => {
@@ -69,7 +198,7 @@ const subpaths = (d) => {
   };
   
   
-const results = { outline: 0, top: 0, faces: 0, compared: 0, skipped: 0, missing: 0, crease: 0 };
+const results = { outline: 0, top: 0, faces: 0, compared: 0, skipped: 0, missing: 0, crease: 0, edgeMissing: 0, serializedMismatch: 0 };
 const worstAt = {};
 for (const theta of angles) {
   const cams = TURN.cams(scene, restValues(T, theta));
@@ -92,18 +221,30 @@ for (const theta of angles) {
     const Pk = planted ? { ...Pp, azimuth: Pp.azimuth - 2 } : Pp;
     const kit = up ? k.extrude(ring, s0, s1 - s0, Pk) : G.prismOf(F, ring, s0, s1, Pk);
     const cut = Boolean(part.spec.cuts?.length);
-    const mine = subpaths(f.d[run.role[cut ? "fill" : "edge"]])[0].pts;
+    const declared = cut ? prismGeometry(T.data.parts[part.id].spec, part.group ? T.data.groups[part.group.index].origin : [0, 0, 0]) : null;
+    const serializedMismatch = cut && !up && !prismMatchesWorld(part.world, T.data.parts[part.id].spec, part.group?.origin ?? [0, 0, 0]);
+    if (serializedMismatch) results.serializedMismatch++;
+    const mine = subpaths(f.d[run.role[cut ? "fill" : "edge"]])[0]?.pts ?? [];
     const theirs = sh(subpaths(kit.fill)[0].pts);
     const visible = cut ? oneWay(subpaths(f.d[run.role.edge]).flatMap((path) => path.pts), theirs) : 0;
     const ho = Math.max(hausdorff(mine, theirs), visible);
+    const edgeMissing = cut && !coversEdges(prismEdges(declared, Pk, shift), edgeSegments(f.d[run.role.edge]), 0.06);
+    if (edgeMissing) results.edgeMissing++;
     results.outline = Math.max(results.outline, ho);
-    if (ho > (worstAt[part.name]?.outline ?? -1)) worstAt[part.name] = { ...(worstAt[part.name] ?? {}), outline: ho, at: theta };
+    const worst = worstAt[part.name] ??= { outline: -1, at: theta };
+    if (ho > worst.outline) {
+      worst.outline = ho;
+      worst.at = theta;
+    }
+    if (edgeMissing) worst.edgeAt = theta;
+    if (serializedMismatch) worst.serializedMismatch = true;
     if (up) {
       const topMine = applyMatrix(subpaths(part.planPath)[0].pts, f.t[run.role.top]);
       const topKit = sh(subpaths(kit.top)[0].pts);
       results.top = Math.max(results.top, hausdorff(topMine, topKit));
     }
-    const kitFaces = kit.shades.map((d) => subpaths(d)).concat(up ? [] : [subpaths(kit.top)]);
+    const faceKit = cut && !up ? G.prismOf(declared.F, declared.ring, declared.s0, declared.s1, Pk) : kit;
+    const kitFaces = faceKit.shades.map((d) => subpaths(d)).concat(up ? [] : [subpaths(faceKit.top)]);
     const faceCount = up ? run.n : run.n + 2;
     for (let i = 0; i < faceCount; i++) {
       const role = run.role[`f${i}`];
@@ -129,9 +270,9 @@ for (const theta of angles) {
 }
 
   const limit = 0.06;
-  const pass = results.outline <= limit && results.top <= limit && results.faces <= limit && results.missing === 0;
-  const worst = Object.entries(worstAt).filter(([, w]) => w.outline > limit).map(([name, w]) => `${name} outline ${w.outline.toFixed(3)} at ${w.at}°`);
-  return { pass, text: `prisms at ${angles.length} angles: outline ${results.outline.toFixed(4)} px · top ${results.top.toFixed(4)} px · faces ${results.faces.toFixed(4)} px over ${results.compared} faces (${results.skipped} in crossfade windows, ${results.missing} with no kit face of that tone)`, worst };
+  const pass = results.outline <= limit && results.top <= limit && results.faces <= limit && results.missing === 0 && results.edgeMissing === 0 && results.serializedMismatch === 0;
+  const worst = Object.entries(worstAt).filter(([, w]) => w.outline > limit || w.edgeAt !== undefined || w.serializedMismatch).map(([name, w]) => `${name} outline ${w.outline.toFixed(3)} at ${w.at}°${w.edgeAt !== undefined ? ` · edge coverage missing at ${w.edgeAt}°` : ""}${w.serializedMismatch ? " · serialized geometry mismatch" : ""}`);
+  return { pass, text: `prisms at ${angles.length} angles: outline ${results.outline.toFixed(4)} px · top ${results.top.toFixed(4)} px · faces ${results.faces.toFixed(4)} px over ${results.compared} faces (${results.skipped} in crossfade windows, ${results.missing} with no kit face of that tone)${results.edgeMissing ? ` · edge coverage missing in ${results.edgeMissing} frames` : ""}${results.serializedMismatch ? ` · serialized geometry mismatch in ${results.serializedMismatch} frames` : ""}`, worst };
 }
 
 export function rounds(T, P, angles, { only = null } = {}) {
@@ -213,7 +354,7 @@ const subpaths = (d) => {
     return { out, w, h };
   }
   
-const stats = { outline: 0, outlineFine: 0, bands: 0, cells: 0, mismatched: 0, parts: 0 };
+const stats = { outline: 0, outlineFine: 0, bands: 0, cells: 0, mismatched: 0, parts: 0, edgeMissing: 0 };
 const worst = [];
 for (const theta of angles) {
   const cams = TURN.cams(scene, restValues(T, theta));
@@ -265,12 +406,31 @@ for (const theta of angles) {
     const kitFine = lathed ? G.lathe(meridian, F, Pf, { smooth: lathed }) : domed ? G.lathe(analytic, F, Pf, { smooth: { slope, radius } }) : G.lathe(meridian, F, Pf, { smooth: true });
     const sh = (pts) => pts.map(([x, y]) => [x + shift[0], y + shift[1]]);
     const cut = Boolean(part.spec.cuts?.length);
-    const mine = subpaths(f.d[run.role[cut ? "fill" : "edge"]])[0];
+    const mine = subpaths(f.d[run.role[cut ? "fill" : "edge"]])[0] ?? [];
     const theirs = sh(subpaths(kit.fill)[0]);
     const fineRef = subpaths(kitFine.fill)[0].map(([x, y]) => [x / 10 + shift[0], y / 10 + shift[1]]);
     const ho = hausdorff(mine, theirs);
     const visible = cut ? subpaths(f.d[run.role.edge]).flat().reduce((worst, point) => Math.max(worst, distToPoly(point, fineRef)), 0) : 0;
-    const hf = Math.max(hausdorff(mine, fineRef), visible);
+    const hf = Math.max(hausdorff(mine, fineRef), hausdorff(subpaths(f.d[run.role.fill])[0] ?? [], fineRef), visible);
+    let edgeMissing = false;
+    if (cut) {
+      const cutEnds = [s0, s1].map((s) => (part.spec.cuts ?? []).some(({ n, d }) => {
+        const along = G.dot3(n, part.spec.F.a);
+        return Math.abs((d - G.dot3(n, part.spec.F.o)) / along - s) < 1e-6;
+      }));
+      const axisProjection = Math.hypot(...k.iso(F.a, { ...Pf, origin: [0, 0] }));
+      const axisDepth = G.dot3(F.a, G.viewOf(Pf));
+      const visibleMeridian = (domed ? analytic : meridian).filter(([s, r], _, profile) => !profile.some(([other, radius]) => r === radius && (other - s) * axisDepth > 0 && Math.abs(other - s) * axisProjection < 1e-9));
+      const atCut = (s) => cutEnds.some((cutEnd, end) => cutEnd && Math.abs(s - (end ? s1 : s0)) < 1e-6);
+      const edgeMeridian = visibleMeridian.filter(([s, r]) => r !== 0 || !atCut(s));
+      const firstCut = atCut(edgeMeridian[0][0]);
+      const lastCut = atCut(edgeMeridian[edgeMeridian.length - 1][0]);
+      const rims = firstCut ? (lastCut ? "none" : "last") : (lastCut ? "first" : "all");
+      const reference = G.outlineOf(edgeMeridian, F, Pf, { smooth: lathed ?? (domed ? { slope, radius } : true), rims });
+      const expected = edgeSegments(reference.outline).map((segment) => segment.map(([x, y]) => [x / 10 + shift[0], y / 10 + shift[1]]));
+      edgeMissing = !coversEdges(expected, edgeSegments(f.d[run.role.edge]), 0.05);
+      if (edgeMissing) stats.edgeMissing++;
+    }
     stats.outline = Math.max(stats.outline, ho);
     stats.outlineFine = Math.max(stats.outlineFine, hf);
     stats.parts++;
@@ -286,7 +446,7 @@ for (const theta of angles) {
     let y0 = Infinity;
     let x1 = -Infinity;
     let y1 = -Infinity;
-    for (const [x, y] of mine) {
+    for (const [x, y] of (mine.length ? mine : fineRef)) {
       x0 = Math.min(x0, x);
       y0 = Math.min(y0, y);
       x1 = Math.max(x1, x);
@@ -295,7 +455,7 @@ for (const theta of angles) {
     const box = [x0 - 1, y0 - 1, x1 + 1, y1 + 1];
     const A = raster(ours, box, 0.2);
     const B = raster(theirsLayers, box, 0.2);
-    const inside = raster([{ tone: 1, d: f.d[run.role.edge] }], box).out;
+    const inside = raster([{ tone: 1, d: f.d[run.role.fill] }], box).out;
     const capCells = raster([0, 1].map((end) => ({ tone: 1, d: run.role[`k${end}`] !== undefined ? f.d[run.role[`k${end}`]] : "" })), box, 0.6).out;
     const capExempt = part.kind === "lathe";
     const insideKit = raster([{ tone: 1, d: "M" + fineRef.map(([x, y]) => `${x} ${y}`).join("L") + "Z" }], box).out;
@@ -326,11 +486,11 @@ for (const theta of angles) {
         worstGap = Math.max(worstGap, near);
       }
     stats.bands = Math.max(stats.bands, worstGap);
-    if (worstGap > 0.5 || hf > 0.05) worst.push({ part: part.name, theta, band: worstGap, outline: hf });
+    if (worstGap > 0.5 || hf > 0.05 || edgeMissing) worst.push({ part: part.name, theta, band: worstGap, outline: hf, edgeMissing });
   }
 }
 
-  return { pass: stats.outlineFine <= 0.05 && stats.bands <= 0.5, text: `rounds: ${stats.parts} frames at ${angles.length} angles: outline vs kit ${stats.outline.toFixed(4)} px (kit rounds to 0.1), vs kit at 10x ${stats.outlineFine.toFixed(4)} px · band boundaries ≤ ${stats.bands.toFixed(2)} px apart (${stats.mismatched} of ${stats.cells} interior cells differ)`, worst: worst.sort((a, b) => b.band - a.band || b.outline - a.outline).slice(0, 12).map((w) => `${w.part} at ${w.theta}°: outline ${w.outline.toFixed(3)} px, band ${w.band.toFixed(2)} px`) };
+  return { pass: stats.outlineFine <= 0.05 && stats.bands <= 0.5 && stats.edgeMissing === 0, text: `rounds: ${stats.parts} frames at ${angles.length} angles: outline vs kit ${stats.outline.toFixed(4)} px (kit rounds to 0.1), vs kit at 10x ${stats.outlineFine.toFixed(4)} px · band boundaries ≤ ${stats.bands.toFixed(2)} px apart (${stats.mismatched} of ${stats.cells} interior cells differ)${stats.edgeMissing ? ` · edge coverage missing in ${stats.edgeMissing} frames` : ""}`, worst: worst.sort((a, b) => b.band - a.band || b.outline - a.outline).slice(0, 12).map((w) => `${w.part} at ${w.theta}°: outline ${w.outline.toFixed(3)} px, band ${w.band.toFixed(2)} px${w.edgeMissing ? " · edge coverage missing" : ""}`) };
 }
 
 export function tubes(T, P, angles) {
