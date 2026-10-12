@@ -71,3 +71,30 @@ for (const event of [null, {}, { id: "invalid" }]) {
     else assert.deepEqual(result.eventChecks, []);
   });
 }
+
+test("R5 published event order keeps causal order on exact timestamp ties, so the ledger audit accepts the published log", () => {
+  // One bucket: the feed that fills it and the discharge that empties it share a timestamp in the tenth step.
+  // Ordering ties by the textual event ID put "transfer:10" before "transfer:9" and the discharge before its credit.
+  const spec = beltSpec((raw) => {
+    const p = raw.parameters.beltBucket;
+    p.bucketCount.value = 1; p.bucketPitch.value = 5; p.beltLength.value = 5; p.feedRate.value = 0.125;
+    raw.parts = raw.parts.filter((entry) => !/^bucket\d+$/.test(entry.id) || entry.id === "bucket001");
+    raw.frames = raw.frames.filter((entry) => !/^bucket\d+-attachment$/.test(entry.id) || entry.id === "bucket001-attachment");
+    for (const key of Object.keys(raw.initialState.inventory_kg)) if (/^bucket\d+$/.test(key) && key !== "bucket001") delete raw.initialState.inventory_kg[key];
+    raw.initialState.inventory_kg.feed = 10;
+  });
+  const start = (5 - 0.2 * Math.PI) / 2 - 1 - 9 * 0.5 / 120;
+  const model = createModel(spec, initial(spec, { speed_mps: 0.5, beltTravel_m: start }), 1);
+  let state = model.initialState;
+  for (let step = 0; step < 9; step++) { const result = model.step(state, [], DT); assert.equal(result.verdict, "passed"); state = result.state; }
+  const last = model.step(state, [], 2 + 1e-9);
+  assert.equal(last.verdict, "passed");
+  const tied = last.events.filter((event, index, all) => all.some((other, other_index) => other_index !== index && other.offset_s === event.offset_s && other.partId === event.partId));
+  assert.ok(tied.length >= 2, "scenario must contain an exact timestamp tie");
+  const sequence = (event) => Number(event.id.split(":").at(-1));
+  assert.deepEqual(last.events.map(sequence), [...last.events.map(sequence)].sort((a, b) => a - b), "events are published in the order they were applied");
+  const before = { inventory_kg: state.inventory_kg, appliedEventIds: [], eventRecords: [] };
+  const after = { inventory_kg: last.state.inventory_kg, appliedEventIds: last.events.map((event) => event.id), eventRecords: last.events };
+  const audit = auditLedger(before, after, last.events, model.recipe.capacities);
+  assert.equal(audit.verdict, "passed", JSON.stringify(audit.diagnostics));
+});

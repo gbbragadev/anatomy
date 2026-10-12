@@ -92,7 +92,7 @@ export function createModel(spec, initialState, seed) {
         }
         dischargeAt(end);
       }
-      events.sort((a, b) => a.offset_s - b.offset_s || (a.partId < b.partId ? -1 : a.partId > b.partId ? 1 : a.id < b.id ? -1 : 1));
+      events.sort((a, b) => a.offset_s - b.offset_s || (a.partId < b.partId ? -1 : a.partId > b.partId ? 1 : 0));
       next = { ...next, tick: state.tick + 1, time_s: state.time_s + dt, beltTravel_m: endTravel, speed_mps: motion.speed_mps, drivePhase_rad: nextPhase, inventory_kg: ledger.inventory_kg, eventSequence: sequence, appliedEventIds: events.map((event) => event.id), lastEvents: events };
       const checked = stateDiagnostics(next, recipe); if (failed(checked)) throw new ModelError(checked);
       return { coverage: "executed", verdict: "passed", state: freezeData(next), events: freezeData(events), diagnostics };

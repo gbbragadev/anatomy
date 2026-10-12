@@ -380,3 +380,16 @@ test("N2 optional reported tolerance must remain finite after conversion", () =>
   assert.equal(result.verdict, "not-evaluated");
   has(result.diagnostics, "NONFINITE_CANONICAL_NUMBER", "/results/0/tolerance");
 });
+
+test("R6 assertion mode cannot release a factual statement backed only by a passed F0 illustrative claim", () => {
+  const spec = copy();
+  Object.assign(spec.claims[0], { kind: "illustrative", requestedLevel: "F0" });
+  Object.assign(spec.visibleText[0], { mode: "assertion", text: "The head radius is 0.20 m." });
+  assert.equal(evaluateClaims(spec, [green])[0].verdict, "passed");
+  assert.equal(evaluateClaims(spec, [green])[0].level, "F0");
+  const result = auditVisibleText(spec, [green])[0];
+  assert.equal(result.verdict, "failed");
+  has(result.diagnostics, "UNSUPPORTED_VISIBLE_ASSERTION");
+  Object.assign(spec.visibleText[0], { mode: "illustrative", text: "Illustrative head radius is 0.20 m." });
+  assert.equal(auditVisibleText(spec, [green])[0].verdict, "passed");
+});
