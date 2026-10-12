@@ -100,6 +100,8 @@ The kit is in `kit/`:
 | `scripts/lines.mjs` | The line-end check on a built page, in headless Chrome: every texture line must end on a stroke, a dot or an outline. Rings the failures with `--out`; exits 1 on any. |
 | `scripts/inline-kit.mjs` | `kitScript()`, `glScript()` and `turnScript()` return the kit, the WebGL layer and the 3D runtime as source to inline into a standalone page. |
 | `scripts/turn-check.mjs`, `scripts/turn-bench.mjs` | 3D figures: fidelity against the kit builders, a z-buffer order check, pixel pops, line ends at 24 angles and frame timing in the browser; Node CPU time per part kind. |
+| `references/equipment-demo.md` | A live technical demo of a machine rather than one figure: choose the stack, write the contract first, keep the model pure, falsify the written numbers with a clearance sweep, label it honestly, and prove it in a real browser. |
+| `references/glow.md` | Making what is live read as live (the thumbnail test), a starter plus an assembler script for short jobs, moving light along a wire, cleaning a user's own mesh. Credits iso-glow (MIT). |
 
 Pick the path that fits the project:
 

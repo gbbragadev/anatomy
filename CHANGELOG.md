@@ -17,6 +17,8 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - `examples/spot-plate/`, a second React figure from the same site as `test-rig`: six pairs of glass drops that run together into one piece of glass as a fan of feeler blades sets `merge`. It draws in the light and dark themes.
 - A first workflow step, **Size it before you start**: every request is sized as a Figure (about 30–90 minutes), a Hero (2–4 hours) or an Epic (6 hours or more), and the estimate is told to the user first. An Epic is not started until the user chooses it over a proposed Hero version. Every size has a working page within the first hour, and Claude reports when a step runs past twice its share of the estimate.
 - `tests/upstream/generate-baseline.mjs` regenerates the legacy byte and export baseline from `git archive` of a named 40-hex upstream commit, never from the working tree, and has no default output path. `tests/upstream/legacy-builds.mjs` holds the build list the generator and the legacy test share.
+- `references/equipment-demo.md`, the workflow for a live technical demo of a machine: choose the stack, write a contract with one owner per file, keep the model pure, falsify the written numbers with a clearance sweep and log each change, label the demo as simulated, and prove it in a real browser with suites that fail on any external request or console error. Taken from two demos built with the skill.
+- `references/glow.md`: the thumbnail test for a lit state, a starter plus an assembler script for short jobs, how a travelling pulse works in `examples/arcade-cabinet/live.js`, and cleaning a user's own mesh. Habits borrowed from iso-glow (MIT, April Zhu; built on iso-figure, MIT, Tolga Cohce); no code is copied.
 
 ### Fixed
 

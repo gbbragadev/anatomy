@@ -227,7 +227,7 @@ Each framework-free example has a Node build script that writes standalone pages
 
 - **[`SKILL.md`](SKILL.md)** is what Claude reads. It sets the workflow: collect the true numbers first, invent the object, write a parts list, plan the world, build the geometry once with the kit, paint back to front, frame it, make it live, and then verify it like a critic. It also holds the craft rules in short form.
 - **[`kit/`](kit)** is the drawing library the figures are built from: the isometric camera, solids and a parts library (`iso-kit`), round parts on any axis (`lathe.mjs`), pipes and cables (`tube.mjs`), the WebGL layer (`gl.mjs`), the 3D runtime (`turn*.mjs`), and React components (`react/`). Apart from React for those components, it has no dependencies.
-- **[`references/`](references)** are the long-form guides Claude opens when it needs them: craft, the kit API, motion, React, verification, WebGL, a design walkthrough and the 3D mode.
+- **[`references/`](references)** are the long-form guides Claude opens when it needs them: craft, the kit API, motion, React, verification, WebGL, a design walkthrough, the 3D mode, the opt-in faithful workflow, building a live equipment demo, and lit-state habits.
 - **Verification.** [`kit/audit.mjs`](kit/audit.mjs) proves the geometry: nothing passes through anything, every end sits on a mount, and every overlap is drawn in depth order (`node build.mjs --audit`). In headless Chrome, [`scripts/capture.mjs`](scripts/capture.mjs) and [`scripts/drive.mjs`](scripts/drive.mjs) take screenshots, close-ups and slowed-down contact sheets, [`scripts/lines.mjs`](scripts/lines.mjs) fails any line that ends in mid-air, and [`scripts/turn-check.mjs`](scripts/turn-check.mjs) checks 3D figures. The skill tells Claude to read every PNG it makes.
 
 <details>
@@ -254,7 +254,8 @@ anatomy/
 │                             experimental variants, not yet documented or used by the examples
 ├── references/               long-form guides Claude reads as needed
 │   ├── craft.md  kit.md  motion.md  react.md
-│   └── verify.md  webgl.md  walkthrough.md  3d.md
+│   ├── verify.md  webgl.md  walkthrough.md  3d.md
+│   └── fidelity.md  equipment-demo.md  glow.md
 ├── scripts/                  headless Chrome checks and build helpers
 │   ├── capture.mjs           screenshots and close-ups
 │   ├── drive.mjs             scripted sessions and contact sheets
