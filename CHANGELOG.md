@@ -50,12 +50,15 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 - Empty parameter dependencies no longer suppress conservative evidence invalidation. Raw machine comparisons cannot approve claims after canonical conversion or residual/uncertainty arithmetic overflows.
 - `examples/test-rig/` drew its glass button dark in the light theme. `stretch.css` now has light values for its own colours.
 - The legacy regression test compared HTML paths with the platform separator and failed on Windows before it compared any bytes. Paths now use `/` on every platform.
+- Belt model events that share a timestamp and a bucket are published in the order they were applied. Ties were ordered by the textual event ID, which put `transfer:10` before `transfer:9`, so the ledger audit rejected the log the model had just published.
+- Visible text in assertion mode can no longer be released from a claim that passes only at hypothesis level F0. Such a claim supports illustrative text with its label, not a factual assertion.
 
 ### Changed
 
 - The workflow steps are renumbered 1–10.
 - The 4× detail sweep scales with the size: the subject and mechanism for a Figure, the whole drawing for a Hero or an Epic. The density rule itself still holds for every figure.
 - The legacy regression baseline is pinned to upstream `240a9bf` instead of `dbf697a`, so its byte-identity guarantee covers the upstream regression fixes this fork now contains.
+- The README now says this is a fork and its install and download commands fetch this fork. The website, the CI badge and the issue forms still point at the original project.
 
 ## 2026-10-08
 

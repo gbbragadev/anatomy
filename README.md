@@ -14,10 +14,12 @@
 <p align="center">
   <a href="https://skills.wheresryan.sh/anatomy"><img src="https://img.shields.io/badge/Website-skills.wheresryan.sh%2Fanatomy-1b1b19?style=for-the-badge" alt="Website: skills.wheresryan.sh/anatomy"></a>
   &nbsp;
-  <a href="https://github.com/wheresryan22/anatomy/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-1b1b19?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
+  <a href="https://github.com/gbbragadev/anatomy/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-1b1b19?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
   &nbsp;
   <a href="#install"><img src="https://img.shields.io/badge/Install-npx_skills_add-d7d7d0?style=for-the-badge&labelColor=1b1b19&logo=npm&logoColor=white" alt="Install with npx"></a>
 </p>
+
+> **This is a fork.** It follows [wheresryan22/anatomy](https://github.com/wheresryan22/anatomy), the original skill (MIT, © 2026 Ryan), and adds an opt-in faithful mode. The install and download commands below fetch this fork. The website, the CI badge and the issue forms linked on this page belong to the original project, because this fork has issues disabled. To pin a version, check out a commit: `git -C ~/.claude/skills/anatomy checkout <commit>`.
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
@@ -45,7 +47,7 @@ Then Claude builds that thing out of dozens of small, solid, shaded parts, puts 
 ## Quick start
 
 ```sh
-npx skills add wheresryan22/anatomy -g -a claude-code
+npx skills add gbbragadev/anatomy -g -a claude-code
 ```
 
 Then, in Claude Code:
@@ -120,10 +122,10 @@ Anatomy is a standard [Agent Skill](https://code.claude.com/docs/en/skills): a f
 
 | | Command | Installs to |
 |---|---|---|
-| **skills CLI**, for you | `npx skills add wheresryan22/anatomy -g -a claude-code` | `~/.claude/skills/anatomy` |
-| **skills CLI**, for one project | `npx skills add wheresryan22/anatomy` | `.claude/skills/anatomy` |
-| **git**, for you | `git clone https://github.com/wheresryan22/anatomy.git ~/.claude/skills/anatomy` | `~/.claude/skills/anatomy` |
-| **git**, for one project | `git clone https://github.com/wheresryan22/anatomy.git .claude/skills/anatomy` | `.claude/skills/anatomy` |
+| **skills CLI**, for you | `npx skills add gbbragadev/anatomy -g -a claude-code` | `~/.claude/skills/anatomy` |
+| **skills CLI**, for one project | `npx skills add gbbragadev/anatomy` | `.claude/skills/anatomy` |
+| **git**, for you | `git clone https://github.com/gbbragadev/anatomy.git ~/.claude/skills/anatomy` | `~/.claude/skills/anatomy` |
+| **git**, for one project | `git clone https://github.com/gbbragadev/anatomy.git .claude/skills/anatomy` | `.claude/skills/anatomy` |
 | **Download**, no git | see below | `~/.claude/skills/anatomy` |
 
 <details>
@@ -151,12 +153,12 @@ Clone the repository into one of Claude Code's skill folders, so that `SKILL.md`
 
 <br>
 
-[Download the ZIP](https://github.com/wheresryan22/anatomy/archive/refs/heads/main.zip), unpack it, rename the folder from `anatomy-main` to `anatomy`, and move it into `~/.claude/skills/`.
+[Download the ZIP](https://github.com/gbbragadev/anatomy/archive/refs/heads/main.zip), unpack it, rename the folder from `anatomy-main` to `anatomy`, and move it into `~/.claude/skills/`.
 
 Or in one line on macOS or Linux:
 
 ```sh
-mkdir -p ~/.claude/skills/anatomy && curl -L https://github.com/wheresryan22/anatomy/archive/refs/heads/main.tar.gz | tar -xz --strip-components=1 -C ~/.claude/skills/anatomy
+mkdir -p ~/.claude/skills/anatomy && curl -L https://github.com/gbbragadev/anatomy/archive/refs/heads/main.tar.gz | tar -xz --strip-components=1 -C ~/.claude/skills/anatomy
 ```
 
 </details>
