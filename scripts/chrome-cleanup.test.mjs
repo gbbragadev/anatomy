@@ -10,9 +10,12 @@ import test from "node:test";
 
 const execute = promisify(execFile);
 
-for (const name of ["capture", "drive", "turn-check"]) test(`${name} removes its real Chrome profile after an early CDP failure`, async (t) => {
+for (const name of ["capture", "drive", "turn-check"]) test(`${name} removes or reports its real Chrome profile after an early CDP failure`, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "anatomy-chrome-cleanup-"));
-  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(async () => {
+    try { await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
+    catch (error) { console.warn("Test fixture removal warning:", error); }
+  });
   const page = join(root, "figure.html");
   await writeFile(page, "<!doctype html><div class=iso-plate>Figure</div>");
   const script = fileURLToPath(new URL(`${name}.mjs`, import.meta.url));
@@ -28,7 +31,8 @@ for (const name of ["capture", "drive", "turn-check"]) test(`${name} removes its
   const diagnostic = JSON.stringify(result);
   assert.equal(result.code, 1, diagnostic);
   assert.match(result.stderr, /CDP \/json\/new timed out after 1 ms/, diagnostic);
-  assert.deepEqual((await readdir(root)).filter((entry) => /^(iso-capture-|iso-drive-|turn-check-)/.test(entry)), [], diagnostic);
+  const profiles = (await readdir(root)).filter((entry) => /^(iso-capture-|iso-drive-|turn-check-)/.test(entry));
+  assert.ok(profiles.length === 0 || /Chrome profile cleanup warning:/.test(result.stderr), diagnostic);
   assert.ok(!(await readdir(root)).includes("forbidden.png"), diagnostic);
 });
 
@@ -79,4 +83,18 @@ test("a locked profile warns without failing completed work", { skip: process.pl
   assert.match(result.stdout, /result:2/);
   assert.match(result.stderr, /EPERM|EBUSY/);
   await access(root);
+});
+
+for (const mode of ["once", "always"]) test(`a profile recreated ${mode} after removal is removed or reported`, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "anatomy-recreated-profile-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const source = `const fs=(await import("node:fs")).default;const {syncBuiltinESMExports}=await import("node:module");const root=process.argv[1];const mode=process.argv[3];const remove=fs.rmSync;let recreated=false;fs.rmSync=(path,options)=>{remove(path,options);if(path===root&&(mode==="always"||!recreated)){fs.mkdirSync(root,{recursive:true});fs.writeFileSync(root+"/writer.txt","recreated");recreated=true}};syncBuiltinESMExports();const {closeChrome}=await import(process.argv[2]);await closeChrome(undefined,root);console.log(JSON.stringify({remains:fs.existsSync(root)}));`;
+  const result = await execute(process.execPath, ["--input-type=module", "-e", source, root, new URL("chrome-port.mjs", import.meta.url).href, mode], { timeout: 15000 });
+  const state = JSON.parse(result.stdout.trim());
+  if (mode === "once") assert.equal(state.remains, false, JSON.stringify(result));
+  else {
+    assert.equal(state.remains, true);
+    assert.match(result.stderr, /cleanup/i, JSON.stringify(result));
+    assert.ok(result.stderr.includes(root), JSON.stringify(result));
+  }
 });

@@ -1,4 +1,4 @@
-import { rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 
 export async function closeChrome(chrome, profile) {
   try {
@@ -24,6 +24,14 @@ export async function closeChrome(chrome, profile) {
   }
   try {
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  } catch (error) {
+    console.warn("Chrome profile cleanup warning:", error);
+  }
+  try {
+    if (existsSync(profile)) {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 2, retryDelay: 50 });
+      if (existsSync(profile)) console.warn("Chrome profile cleanup warning: Profile still exists after removal:", profile);
+    }
   } catch (error) {
     console.warn("Chrome profile cleanup warning:", error);
   }
